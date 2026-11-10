@@ -15,14 +15,15 @@ export function PhotoUploader({ jobId, userId }: { jobId: string; userId: string
   const [items, setItems] = useState<Item[]>([]);
   const [preparing, setPreparing] = useState(0);
   const busy = useRef(false);
+  const current = useRef<string | null>(null);
   const previews = useRef(new Map<string, string>());
 
   const sync = useCallback(async () => {
     const all = (await queueAll()).filter(p => p.jobId === jobId);
-    setItems(prev => all.map(p => {
+    setItems(all.map(p => {
       if (!previews.current.has(p.id)) previews.current.set(p.id, URL.createObjectURL(p.thumb));
-      const old = prev.find(i => i.id === p.id);
-      return { id: p.id, jobId: p.jobId, status: old?.status === 'uploading' ? 'uploading' : p.error ? 'failed' : 'waiting', error: p.error, preview: previews.current.get(p.id) };
+      const status = current.current === p.id ? 'uploading' : p.error ? 'failed' : 'waiting';
+      return { id: p.id, jobId: p.jobId, status, error: p.error, preview: previews.current.get(p.id) };
     }));
     return all;
   }, [jobId]);
@@ -34,6 +35,7 @@ export function PhotoUploader({ jobId, userId }: { jobId: string; userId: string
     try {
       for (const p of await sync()) {
         if (!navigator.onLine) break;
+        current.current = p.id;
         setItems(list => list.map(i => (i.id === p.id ? { ...i, status: 'uploading', error: undefined } : i)));
         try {
           await uploadOne(p);
@@ -43,6 +45,8 @@ export function PhotoUploader({ jobId, userId }: { jobId: string; userId: string
           uploaded++;
         } catch (e) {
           await queuePut({ ...p, attempts: p.attempts + 1, error: e instanceof Error ? e.message : 'Upload failed' });
+        } finally {
+          current.current = null;
         }
       }
     } finally {
