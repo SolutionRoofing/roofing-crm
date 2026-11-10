@@ -1,5 +1,6 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { cache } from 'react';
 import { isSupabaseConfigured } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
@@ -27,6 +28,8 @@ export const isAdmin = (u: CurrentUser) => u.active && (u.role === 'owner' || u.
 
 /** The signed-in user and their profile, or null when signed out. Cached per request. */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  // Session reads are per request; say so before Supabase touches the clock.
+  await connection();
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
