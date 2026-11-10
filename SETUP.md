@@ -9,7 +9,7 @@ This walks through connecting the app to Supabase (its database, logins and phot
 3. Open **Project Settings → API Keys** and copy three values into a new file called `.env.local` in this folder (start from `.env.example`):
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - Publishable key → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - Secret key → `SUPABASE_SECRET_KEY`. Keep this one private: it can do anything in the database.
+   - Secret key → `SUPABASE_SECRET_KEY`. Keep this one private: it can do anything in the database. To save it without pasting it anywhere, click the copy icon next to it, then run `powershell -ExecutionPolicy Bypass -File scripts\save-secret-key.ps1`. That puts it into `.env.local` straight from the clipboard.
 
 ## 2. Create the database (you or Claude)
 
@@ -33,11 +33,7 @@ The **first login created becomes the Owner**, so do this before inviting anyone
 - **Authentication → URL Configuration**:
   - Site URL: `http://localhost:3000` for now. Change it to `https://crm.yourcompany.com` at launch.
   - Redirect URLs: add the same address followed by `/**`.
-- **Authentication → Emails → Templates**:
-  - **Invite user**: change the link to
-    `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/account/password`
-  - **Reset password**: change the link to
-    `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/account/password`
+- The email templates can stay as Supabase ships them. The app accepts Supabase's standard invite and reset links (`/auth/accept` and `/auth/confirm`).
 - Supabase's built-in email sender only allows a few emails an hour. Before inviting all 9 people, connect Resend under **Authentication → Emails → SMTP Settings**. That's the same Resend account the follow-up emails will use.
 
 ## 5. Run the app on this PC

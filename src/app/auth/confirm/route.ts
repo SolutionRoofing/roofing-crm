@@ -4,17 +4,21 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeNext } from '@/lib/safe-next';
 
-// Target of the invite and password-reset emails. Exchanges the one-time token for a
-// session, then sends the person on (normally to choose a password).
+// Target of password-reset emails (and of custom email templates that link here with a
+// token_hash). Exchanges the one-time code or token for a session, then sends the person
+// on, normally to choose a password.
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
+  const code = params.get('code');
   const tokenHash = params.get('token_hash');
   const type = params.get('type') as EmailOtpType | null;
   const next = safeNext(params.get('next')) ?? '/';
 
-  if (tokenHash && type) {
+  if (code || (tokenHash && type)) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const { error } = code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : await supabase.auth.verifyOtp({ type: type!, token_hash: tokenHash! });
     if (!error) redirect(next);
   }
   redirect('/login?error=link');

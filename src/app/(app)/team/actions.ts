@@ -28,7 +28,7 @@ export async function inviteMember(_prev: FormState, formData: FormData): Promis
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
-    redirectTo: `${origin}/auth/confirm?next=/account/password`,
+    redirectTo: `${origin}/auth/accept?next=/account/password`,
   });
   if (error || !data.user) {
     return { error: error?.message.includes('already') ? 'That email already has a login.' : `Invite failed: ${error?.message}` };
