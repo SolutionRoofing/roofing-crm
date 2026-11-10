@@ -9,7 +9,7 @@ This walks through connecting the app to Supabase (its database, logins and phot
 3. Open **Project Settings → API Keys** and copy three values into a new file called `.env.local` in this folder (start from `.env.example`):
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - Publishable key → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - Secret key → `SUPABASE_SECRET_KEY`. Keep this one private: it can do anything in the database. To save it without pasting it anywhere, click the copy icon next to it, then run `powershell -ExecutionPolicy Bypass -File scripts\save-secret-key.ps1`. That puts it into `.env.local` straight from the clipboard.
+   - Secret key → `SUPABASE_SECRET_KEY`. Keep this one private: it can do anything in the database. To save it without pasting it anywhere, click the copy icon next to it, then run `powershell -ExecutionPolicy Bypass -File scripts\save-secret-key.ps1` from this folder. Copy it from your regular browser: the copy button inside the Claude app's browser pane doesn't reach the Windows clipboard. That puts it into `.env.local` straight from the clipboard.
 
 ## 2. Create the database (you or Claude)
 

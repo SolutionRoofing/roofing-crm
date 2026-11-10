@@ -1,27 +1,23 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icon';
-import { getCurrentUser, isAdmin, ROLE_LABELS, type CurrentUser } from '@/lib/auth';
+import { LiveRefresh } from '@/components/client';
+import { getCurrentUser, ROLE_LABELS } from '@/lib/auth';
 import { signOut } from '@/app/login/actions';
-import { NavLinks, type NavItem } from './nav';
-
-function navFor(user: CurrentUser | null): NavItem[] {
-  if (!user?.active) return [];
-  if (user.role === 'crew') return [{ href: '/work-orders', label: 'My work', icon: 'clipboard' }];
-  const items: NavItem[] = [
-    { href: '/dashboard', label: 'Dashboard', icon: 'home' },
-    { href: '/work-orders', label: 'Work orders', icon: 'clipboard' },
-  ];
-  if (isAdmin(user)) items.push({ href: '/team', label: 'Team', icon: 'users' });
-  return items;
-}
+import { NavLinks } from './nav';
+import { navFor, STAFF_TABS } from './nav-items';
 
 async function SideNav() {
   return <NavLinks items={navFor(await getCurrentUser())} variant="side" />;
 }
 
 async function TabBar() {
-  return <NavLinks items={navFor(await getCurrentUser())} variant="tabs" />;
+  const user = await getCurrentUser();
+  const items = navFor(user);
+  if (user?.role === 'crew') return <NavLinks items={items} variant="tabs" />;
+  const tabs = items.filter(i => STAFF_TABS.includes(i.href));
+  const rest = items.filter(i => !STAFF_TABS.includes(i.href)).map(i => i.href);
+  return <NavLinks items={[...tabs, { href: '/more', label: 'More', icon: 'more' }]} variant="tabs" moreFor={rest} />;
 }
 
 async function UserBox() {
@@ -34,6 +30,11 @@ async function UserBox() {
       <form action={signOut}><button>Sign out</button></form>
     </div>
   );
+}
+
+async function Live() {
+  const user = await getCurrentUser();
+  return user?.active ? <LiveRefresh /> : null;
 }
 
 // Session reads sit behind Suspense so the shell itself renders instantly.
@@ -53,6 +54,7 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
         <main id="view">{children}</main>
       </div>
       <nav className="tabbar" aria-label="Main"><Suspense fallback={null}><TabBar /></Suspense></nav>
+      <Suspense fallback={null}><Live /></Suspense>
     </div>
   );
 }

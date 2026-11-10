@@ -258,6 +258,25 @@ test('signed-out visitors and uninvited accounts see nothing', async () => {
   });
 });
 
+test('job list view: staff see value from the accepted estimate; crews see nothing', async () => {
+  await as(db, u.rep2, async q => {
+    const row = await one(q, `select customer_name, rep_name, amount from job_list where id = $1`, [ids.job]);
+    assert.equal(row.customer_name, 'Avery Thompson');
+    assert.equal(row.rep_name, 'Rita Rep');
+    assert.equal(Number(row.amount), 12190.5);
+  });
+  await as(db, u.crewA, async q => {
+    assert.equal((await all(q, `select id from job_list`)).length, 0);
+  });
+});
+
+test('anyone can edit their own name and phone, but not their role', async () => {
+  await as(db, u.crewA, q => q.query(`select update_my_profile('Alex Martinez', '(555) 555-0177')`));
+  const p = await one(db, `select full_name, phone, role from profiles where id = $1`, [u.crewA]);
+  assert.deepEqual(p, { full_name: 'Alex Martinez', phone: '(555) 555-0177', role: 'crew' });
+  await assert.rejects(asAnon(db, q => q.query(`select update_my_profile('x', 'y')`)), /permission denied/);
+});
+
 test('importer helper is not callable by signed-in users', async () => {
   await assert.rejects(as(db, u.owner, q => q.query(`select sync_number_sequences()`)), /permission denied/);
 });
