@@ -17,6 +17,7 @@ export function navFor(user: CurrentUser | null): NavItem[] {
     { href: '/calendar', label: 'Calendar', icon: 'calendar' },
     { href: '/tasks', label: 'Tasks', icon: 'check' },
     { href: '/money', label: 'Money', icon: 'dollar' },
+    { href: '/emails', label: 'Emails', icon: 'mail' },
     { href: '/work-orders', label: 'Work orders', icon: 'clipboard' },
   ];
   if (isAdmin(user)) items.push({ href: '/team', label: 'Team', icon: 'users' });

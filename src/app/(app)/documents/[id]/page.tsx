@@ -12,7 +12,8 @@ import { isUuid } from '@/lib/form';
 import { displayStatus, docLabel, docTotals, STATUS_BADGE, type Line } from '@/lib/documents';
 import { fmtDateTime, fmtDay, fullName, moneyCents, todayISO } from '@/lib/format';
 import { convertToInvoice, deleteDocument, deletePayment, setDocumentStatus, shareDocument } from '../actions';
-import { CopyLink, PaymentForm, PrintButton } from '../doc-client';
+import { CopyLink, EmailDocButton, PaymentForm, PrintButton } from '../doc-client';
+import { emailConfigured } from '@/lib/email/send';
 
 export const metadata: Metadata = { title: 'Estimate or invoice' };
 
@@ -56,6 +57,7 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
   const origin = process.env.SITE_URL?.replace(/\/$/, '') || `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('x-forwarded-host') ?? h.get('host')}`;
   const shareUrl = d.share_token ? `${origin}/e/${d.share_token}` : null;
   const label = docLabel(d);
+  const canEmail = emailConfigured();
   const company = settings?.company ?? 'our company';
   const mailto = shareUrl && contact?.email
     ? `mailto:${contact.email}?subject=${encodeURIComponent(`Your ${isInvoice ? 'invoice' : 'estimate'} from ${company}`)}&body=${encodeURIComponent(
@@ -90,11 +92,12 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
         <aside className="no-print">
           <section className="panel">
             <div className="panel-head"><h2>Send to the customer</h2></div>
+            {canEmail && contact?.email && d.status !== 'void' && <EmailDocButton documentId={id} to={contact.email} />}
             {shareUrl ? (
               <>
                 <CopyLink url={shareUrl} />
                 <div className="quick">
-                  {mailto ? <a className="btn small primary" href={mailto}><Icon name="mail" size={14} /> Email the link</a>
+                  {mailto ? <a className={`btn small${canEmail ? '' : ' primary'}`} href={mailto}><Icon name="mail" size={14} /> {canEmail ? 'Use my email app' : 'Email the link'}</a>
                     : <span className="muted">Add an email to the customer to send it from here.</span>}
                   <a className="btn small" href={shareUrl} target="_blank" rel="noreferrer">Preview</a>
                 </div>

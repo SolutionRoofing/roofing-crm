@@ -9,6 +9,7 @@ import { isoDate, number, oneOf, text, uuid } from '@/lib/form';
 import { cleanLines, docTotals, PAYMENT_METHODS } from '@/lib/documents';
 import { addDaysISO, todayISO } from '@/lib/format';
 import type { FormState } from '@/app/login/actions';
+import { emailConfigured, processOutbox, siteUrl } from '@/lib/email/send';
 
 const STAFF = ['owner', 'office', 'rep'] as const;
 
@@ -152,6 +153,40 @@ export async function deleteDocument(fd: FormData) {
   if (!count) throw new Error('That document could not be deleted.');
   refresh(null, data?.job_id ?? null);
   redirect(data ? `/jobs/${data.job_id}#money` : '/money');
+}
+
+/** Emails the customer link from the CRM (through Resend) and records it in the email log. */
+export async function emailDocument(_prev: FormState, fd: FormData): Promise<FormState> {
+  await requireUser([...STAFF]);
+  const id = uuid(fd, 'id');
+  if (!id) return { error: 'Missing document.' };
+  if (!emailConfigured()) return { error: 'Email sending is not connected yet. Use "Email the link" to send it from your own email app.' };
+  const supabase = await createClient();
+  const { data: token, error: e1 } = await supabase.rpc('share_document', { p_doc: id });
+  if (e1) return { error: e1.message };
+  const { data: d } = await supabase.from('documents').select('kind, number, job_id, jobs(contact_id)').eq('id', id).single();
+  const contactId = (d?.jobs as unknown as { contact_id: string | null } | null)?.contact_id;
+  if (!d || !contactId) return { error: 'This job has no customer to email.' };
+  const { data: c } = await supabase.from('contacts').select('email').eq('id', contactId).single();
+  if (!c?.email) return { error: 'Add an email address to the customer first.' };
+
+  const isInvoice = d.kind === 'invoice';
+  const label = `${isInvoice ? 'INV' : 'EST'}-${String(d.number).padStart(2, '0')}`;
+  const link = `${siteUrl()}/e/${token}`;
+  const body = isInvoice
+    ? `Hi {{first_name}},\n\nHere is your invoice (${label}) for the work at {{address}}:\n${link}\n\nThank you for your business.\n\n{{rep_name}}\n{{company}} | {{company_phone}}`
+    : `Hi {{first_name}},\n\nHere is your roofing estimate (${label}) for {{address}}. You can review it and sign online when you're ready:\n${link}\n\nAny questions, just reply to this email.\n\n{{rep_name}}\n{{company}} | {{company_phone}}`;
+  const { error: e2 } = await supabase.from('outbox').insert({
+    document_id: id, job_id: d.job_id, contact_id: contactId, to_email: c.email,
+    subject: isInvoice ? `Your invoice from {{company}} (${label})` : `Your roofing estimate from {{company}}`,
+    body, kind: 'followup', send_at: new Date().toISOString(), status: 'scheduled',
+  });
+  if (e2) return { error: e2.message };
+  const r = await processOutbox(10);
+  await supabase.from('job_activity').insert({ job_id: d.job_id, kind: 'system', text: `${label} emailed to ${c.email}` });
+  refresh(id, d.job_id);
+  revalidatePath('/emails');
+  return r.sent ? { ok: `Sent to ${c.email}.` } : { ok: `Queued for ${c.email}; it will go out within a few minutes.` };
 }
 
 /** Customer signing from the public link. Runs signed-out; the database checks the token. */

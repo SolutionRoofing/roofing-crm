@@ -354,6 +354,52 @@ test('invoices can be shared for viewing but not signed', async () => {
   await assert.rejects(asAnon(db, q => q.query(`select share_document($1)`, [ids.invoice])), /permission denied/);
 });
 
+test('email queue: claim hands out due emails once, recovers stuck ones, and is service-only', async () => {
+  await db.query(`delete from outbox`);
+  await db.query(`insert into outbox (contact_id, to_email, subject, body, send_at, status) values
+    ($1, 'a@example.com', 'due 1', 'x', now() - interval '1 hour', 'scheduled'),
+    ($1, 'a@example.com', 'due 2', 'x', now() - interval '1 minute', 'scheduled'),
+    ($1, 'a@example.com', 'later', 'x', now() + interval '1 day', 'scheduled'),
+    ($1, 'a@example.com', 'cancelled', 'x', now() - interval '1 hour', 'cancelled'),
+    ($1, 'a@example.com', 'stuck', 'x', now() - interval '2 hours', 'sending')`, [ids.contact]);
+  await db.query(`update outbox set claimed_at = now() - interval '1 hour', attempts = 1 where subject = 'stuck'`);
+
+  await db.query(`set role service_role`);
+  const first = await all(db, `select subject, status, attempts from claim_outbox(10) order by send_at`);
+  const second = await all(db, `select subject from claim_outbox(10)`);
+  await db.query(`reset role`);
+
+  assert.deepEqual(first.map(r => r.subject), ['stuck', 'due 1', 'due 2']);
+  assert.ok(first.every(r => r.status === 'sending'));
+  assert.equal(first[0].attempts, 2, 'stuck email retried with attempt counted');
+  assert.equal(second.length, 0, 'nothing handed out twice');
+  await assert.rejects(as(db, u.owner, q => q.query(`select * from claim_outbox(10)`)), /permission denied/);
+  await assert.rejects(asAnon(db, q => q.query(`select * from claim_outbox(10)`)), /permission denied/);
+});
+
+test('unsubscribe link: stops marketing, cancels queued marketing, keeps job follow-ups', async () => {
+  const { unsubscribe_token: token } = await one(db, `update contacts set marketing = true, unsubscribed_at = null where id = $1 returning unsubscribe_token`, [ids.contact]);
+  assert.equal(token.length, 64);
+  await db.query(`delete from outbox`);
+  await db.query(`insert into outbox (contact_id, to_email, subject, body, kind, status) values
+    ($1, 'a@example.com', 'Storm offer', 'x', 'marketing', 'scheduled'),
+    ($1, 'a@example.com', 'Install prep', 'x', 'followup', 'scheduled')`, [ids.contact]);
+
+  const info = await asAnon(db, async q => (await one(q, `select unsubscribe_info($1) as i`, [token])).i);
+  assert.equal(info.company, 'Your Roofing Company');
+  assert.equal(info.email, 'a•••@example.com');
+  assert.equal(info.unsubscribed, false);
+  assert.equal(await asAnon(db, async q => (await one(q, `select unsubscribe_info('nope') as i`)).i), null);
+
+  assert.equal(await asAnon(db, async q => (await one(q, `select unsubscribe_contact($1) as ok`, [token])).ok), true);
+  const c = await one(db, `select marketing, unsubscribed_at from contacts where id = $1`, [ids.contact]);
+  assert.equal(c.marketing, false);
+  assert.ok(c.unsubscribed_at);
+  const mail = await all(db, `select subject, status from outbox order by subject`);
+  assert.deepEqual(mail, [{ subject: 'Install prep', status: 'scheduled' }, { subject: 'Storm offer', status: 'cancelled' }]);
+  assert.equal(await asAnon(db, async q => (await one(q, `select unsubscribe_contact('x') as ok`)).ok), false);
+});
+
 test('importer helper is not callable by signed-in users', async () => {
   await assert.rejects(as(db, u.owner, q => q.query(`select sync_number_sequences()`)), /permission denied/);
 });

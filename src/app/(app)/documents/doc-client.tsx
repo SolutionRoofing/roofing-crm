@@ -3,7 +3,19 @@
 import { useActionState, useState } from 'react';
 import type { FormState } from '@/app/login/actions';
 import { PAYMENT_METHODS } from '@/lib/documents';
-import { recordPayment } from './actions';
+import { emailDocument, recordPayment } from './actions';
+
+export function EmailDocButton({ documentId, to }: { documentId: string; to: string }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(emailDocument, {});
+  return (
+    <form action={action} className="email-doc">
+      <input type="hidden" name="id" value={documentId} />
+      <button className="btn small primary" disabled={pending}>{pending ? 'Sending…' : `Send by email to ${to}`}</button>
+      {state.error && <p className="form-error" role="alert">{state.error}</p>}
+      {state.ok && <p className="form-ok" role="status">{state.ok}</p>}
+    </form>
+  );
+}
 
 export function PrintButton() {
   return <button type="button" className="btn" onClick={() => window.print()}>Print / Save as PDF</button>;

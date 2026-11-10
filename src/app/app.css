@@ -72,6 +72,21 @@
 .catalog-row { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--line); padding: 6px 0; }
 .catalog-row .inline-form { flex: 1; }
 .line-item .num { text-align: right; }
+/* Phase 5: emails */
+.rule-row { display: flex; gap: 8px; align-items: flex-start; border-top: 1px solid var(--line); padding: 10px 0; }
+.rule-row.off { opacity: .6; }
+.rule-label { width: 120px; flex: none; font-size: 12.5px; padding-top: 7px; }
+.rule-form { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; flex: 1; font-size: 13px; }
+.rule-form input:not([type=checkbox]), .rule-form select { padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--surface); min-height: 32px; }
+.rule-form label { display: inline-flex; gap: 5px; align-items: center; }
+.template-box > summary { cursor: pointer; list-style: none; }
+.template-box > summary::-webkit-details-marker { display: none; }
+.template-box[open] > summary { margin-bottom: 12px; }
+.merge-key { display: inline-block; background: var(--surface); border-radius: 4px; padding: 0 5px; margin: 2px 4px 2px 0; font-size: 12px; }
+.email-doc { margin-bottom: 10px; display: grid; gap: 6px; }
+.inline-form .form-error, .inline-form .form-ok { padding: 4px 9px; font-size: 13px; }
+@media (max-width: 860px) { .rule-row { flex-direction: column; } .rule-label { width: auto; padding: 0; } }
+
 /* Phase 3: photos */
 .photo-upload { margin-bottom: 12px; }
 .file-btn { cursor: pointer; }
