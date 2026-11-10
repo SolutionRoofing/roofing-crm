@@ -10,7 +10,7 @@
 .link-btn:hover { text-decoration: underline; }
 .form-error { background: var(--bad-bg); color: var(--bad); border-radius: 8px; padding: 8px 11px; font-weight: 600; }
 .form-ok { background: var(--good-bg); color: var(--good); border-radius: 8px; padding: 8px 11px; font-weight: 600; }
-.side { display: flex; flex-direction: column; }
+@media (min-width: 861px) { .side { display: flex; flex-direction: column; } }
 .side nav { flex: 1; }
 .user-box { border-top: 1px solid var(--side-2); padding: 12px 8px 4px; color: var(--side-ink); font-size: 13px; }
 .user-box b { display: block; color: #fff; font-weight: 600; }

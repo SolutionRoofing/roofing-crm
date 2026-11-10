@@ -42,7 +42,7 @@ async function Board({ searchParams }: { searchParams: PageProps<'/pipeline'>['s
   return (
     <>
       <div className="filters" style={{ marginBottom: 10 }}>
-        <span className="muted">{data?.length ?? 0} jobs · {money((data ?? []).reduce((s, j) => s + Number(j.amount), 0))}</span>
+        <span className="muted">{data?.length ?? 0} {data?.length === 1 ? 'job' : 'jobs'} ·{money((data ?? []).reduce((s, j) => s + Number(j.amount), 0))}</span>
         <span className="spacer" />
         <Link className="btn small" href={showClosed ? '/pipeline' : '/pipeline?closed=1'}>
           {showClosed ? 'Hide paid and lost' : 'Show paid and lost'}

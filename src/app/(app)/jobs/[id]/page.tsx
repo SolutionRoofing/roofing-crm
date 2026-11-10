@@ -129,7 +129,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
 
         <section className="panel">
           <div className="panel-head"><h2>Job details</h2></div>
-          <form action={updateJob} className="form-grid">
+          <form key={job.updated_at} action={updateJob} className="form-grid">
             <input type="hidden" name="id" value={job.id} />
             <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="jd-name">Name</label><input id="jd-name" name="name" defaultValue={job.name} required /></div>
             <div className="field"><label htmlFor="jd-type">Type</label>
@@ -158,7 +158,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
         </section>
       </div>
 
-      {job.type === 'Insurance' && <Claim jobId={job.id} ins={ins} />}
+      {job.type === 'Insurance' && <Claim key={job.updated_at} jobId={job.id} ins={ins} />}
 
       <div className="grid-2" id="schedule">
         <section className="panel">

@@ -12,8 +12,17 @@ export function StageSelect({ action, jobId, stage, compact }: {
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const reasonRef = useRef<HTMLInputElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  // Arrow keys on a focused select fire a change per step; wait until the choice settles
+  // so a job isn't moved through every stage in between (each move can queue emails).
+  const submitSoon = (delay: number) => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => formRef.current?.requestSubmit(), delay);
+  };
   return (
-    <form ref={formRef} action={action} className={compact ? 'stage-pick compact' : 'stage-pick'}>
+    // key: redraw when the stage changes elsewhere (automation, another user), so the picker never shows a stale stage.
+    <form key={stage} ref={formRef} action={action} className={compact ? 'stage-pick compact' : 'stage-pick'}>
       <input type="hidden" name="id" value={jobId} />
       <input type="hidden" name="lost_reason" ref={reasonRef} />
       {!compact && <span>Stage</span>}
@@ -22,13 +31,18 @@ export function StageSelect({ action, jobId, stage, compact }: {
         defaultValue={stage}
         aria-label="Job stage"
         onChange={e => {
+          clearTimeout(timer.current);
+          if (e.target.value === stage) return;
           if (e.target.value === 'lost') {
             const reason = window.prompt('Why was this job lost? (e.g. went with a competitor, price, claim denied)');
             if (reason === null) { e.target.value = stage; return; }
             if (reasonRef.current) reasonRef.current.value = reason;
+            formRef.current?.requestSubmit();
+            return;
           }
-          formRef.current?.requestSubmit();
+          submitSoon(900);
         }}
+        onBlur={e => { if (e.target.value !== stage) submitSoon(0); }}
       >
         {STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
       </select>

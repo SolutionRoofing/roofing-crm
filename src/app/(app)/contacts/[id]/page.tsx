@@ -79,7 +79,7 @@ async function Contact({ params }: { params: PageProps<'/contacts/[id]'>['params
         </div>
         <section className="panel">
           <div className="panel-head"><h2>Details</h2></div>
-          <form action={updateContact} className="form-grid">
+          <form key={c.updated_at} action={updateContact} className="form-grid">
             <input type="hidden" name="id" value={c.id} />
             <ContactFields c={c} />
             <div style={{ gridColumn: '1 / -1' }}><SubmitButton>Save customer</SubmitButton></div>
