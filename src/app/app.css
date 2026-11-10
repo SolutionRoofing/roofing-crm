@@ -73,6 +73,7 @@
 .catalog-row .inline-form { flex: 1; }
 .line-item .num { text-align: right; }
 @media (max-width: 1000px) { .doc-layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 500px) { .sheet-table th, .sheet-table td { padding: 6px 3px; font-size: 13px; } .sheet-sum { width: 100%; } }
 @media print {
   .mobile-top, .public-bar { display: none !important; }
   .doc-layout { display: block; }

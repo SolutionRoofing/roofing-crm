@@ -14,7 +14,7 @@ import { fmtDateTime, fmtDay, fullName, moneyCents, todayISO } from '@/lib/forma
 import { convertToInvoice, deleteDocument, deletePayment, setDocumentStatus, shareDocument } from '../actions';
 import { CopyLink, PaymentForm, PrintButton } from '../doc-client';
 
-export const metadata: Metadata = { title: 'Estimate' };
+export const metadata: Metadata = { title: 'Estimate or invoice' };
 
 export default function DocumentPage({ params }: PageProps<'/documents/[id]'>) {
   return (

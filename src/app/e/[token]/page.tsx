@@ -47,6 +47,15 @@ async function Shared({ params }: { params: PageProps<'/e/[token]'>['params'] })
         <PrintButton />
       </div>
       <DocSheet d={d} />
+      {d.kind === 'estimate' && d.signed_at && (
+        <div className="panel sign-panel no-print" role="status">
+          <h2>Thank you, {d.signed_name}!</h2>
+          <p style={{ marginTop: 6 }}>
+            Your signed estimate is with {d.company.company}. We&apos;ll be in touch to schedule your project.
+            {d.company.phone ? ` Questions? Call ${d.company.phone}.` : ''}
+          </p>
+        </div>
+      )}
       {canSign && <SignForm token={token} defaultName={fullName(d.customer) === 'No customer' ? '' : fullName(d.customer)} total={moneyCents(total)} />}
       {d.kind === 'estimate' && d.status === 'declined' && (
         <p className="panel muted no-print">This estimate was marked declined. Contact us if you&apos;d like to revisit it.</p>
