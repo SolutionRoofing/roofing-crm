@@ -13,6 +13,9 @@ import { getPeople, personName } from '@/lib/staff';
 import { daysSince, fmtDateTime, fmtDay, fullAddress, fullName, mapHref, money, moneyCents, telHref, todayISO } from '@/lib/format';
 import { CLAIM_STATUSES, JOB_TYPES, ROOF_TYPES } from '@/lib/options';
 import { displayStatus, docLabel, STATUS_BADGE } from '@/lib/documents';
+import { getPhotos } from '@/lib/photos';
+import { PhotoUploader } from '@/components/photo-upload';
+import { PhotoGallery } from '@/components/photo-gallery';
 import {
   addNote, addSupplement, changeStage, createWorkOrder, deleteJob, deleteWorkOrder, updateClaim, updateJob, updateSupplement,
 } from '../actions';
@@ -63,7 +66,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
   const { data: job } = await supabase.from('jobs').select('*').eq('id', id).maybeSingle();
   if (!job) notFound();
 
-  const [contactRes, docsRes, tasksRes, eventsRes, wosRes, activityRes, valueRes, staff] = await Promise.all([
+  const [contactRes, docsRes, tasksRes, eventsRes, wosRes, activityRes, valueRes, staff, photos] = await Promise.all([
     job.contact_id ? supabase.from('contacts').select('*').eq('id', job.contact_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from('documents').select('id, kind, number, status, date, due_date, items, tax_rate, payments(amount)').eq('job_id', id).order('created_at'),
     supabase.from('tasks').select(TASK_COLUMNS).eq('job_id', id).order('done').order('due', { nullsFirst: false }),
@@ -72,6 +75,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
     supabase.from('job_activity').select('id, at, kind, text, profiles(full_name, email)').eq('job_id', id).order('at', { ascending: false }).limit(100),
     supabase.from('job_list').select('amount').eq('id', id).maybeSingle(),
     getPeople(),
+    getPhotos([id]),
   ]);
   const contact = contactRes.data;
   const docs = (docsRes.data ?? []) as unknown as Doc[];
@@ -102,6 +106,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
       <nav className="tabs" aria-label="Job sections">
         <a href="#overview">Overview</a>
         {job.type === 'Insurance' && <a href="#claim">Claim</a>}
+        <a href="#photos">Photos{photos.length ? ` (${photos.length})` : ''}</a>
         <a href="#schedule">Schedule</a>
         <a href="#tasks">Tasks</a>
         <a href="#money">Estimates</a>
@@ -160,6 +165,12 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
       </div>
 
       {job.type === 'Insurance' && <Claim key={job.updated_at} jobId={job.id} ins={ins} />}
+
+      <section className="panel" id="photos">
+        <div className="panel-head"><h2>Photos</h2></div>
+        <PhotoUploader jobId={job.id} userId={me.id} />
+        <PhotoGallery photos={photos} userId={me.id} canEditAll />
+      </section>
 
       <div className="grid-2" id="schedule">
         <section className="panel">

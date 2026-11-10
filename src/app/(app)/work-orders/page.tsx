@@ -3,12 +3,16 @@ import type { Metadata } from 'next';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { updateWorkOrder } from './actions';
+import { getPhotos } from '@/lib/photos';
+import { PhotoUploader } from '@/components/photo-upload';
+import { PhotoGallery } from '@/components/photo-gallery';
 
 export const metadata: Metadata = { title: 'Work orders' };
 
 type ScopeItem = { desc: string; qty: number | string; unit: string };
 type WorkOrder = {
   id: string;
+  job_id: string;
   status: 'assigned' | 'in_progress' | 'done';
   scheduled_date: string | null;
   job_number: number;
@@ -45,11 +49,12 @@ async function WorkOrders() {
   // Every column here is price-free by design; crews can't read anything else.
   const { data, error } = await supabase
     .from('work_orders')
-    .select('id, status, scheduled_date, job_number, customer_name, site_address, site_phone, roof_type, squares, pitch, scope, materials, access_notes, crew_notes, crews(name)')
+    .select('id, job_id, status, scheduled_date, job_number, customer_name, site_address, site_phone, roof_type, squares, pitch, scope, materials, access_notes, crew_notes, crews(name)')
     .order('scheduled_date', { ascending: true, nullsFirst: false })
     .returns<WorkOrder[]>();
   const STATUS_ORDER = { in_progress: 0, assigned: 1, done: 2 };
   data?.sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+  const photos = await getPhotos([...new Set((data ?? []).map(w => w.job_id))]);
 
   const isCrew = user.role === 'crew';
   return (
@@ -86,6 +91,11 @@ async function WorkOrders() {
           )}
           {wo.materials && <p style={{ marginTop: 8 }}><b>Materials:</b> {wo.materials}</p>}
           {wo.access_notes && <p style={{ marginTop: 4 }}><b>Site notes:</b> {wo.access_notes}</p>}
+          <details className="wo-photos" open={isCrew && wo.status !== 'done'}>
+            <summary><b>Photos</b> <span className="muted">({photos.filter(p => p.job_id === wo.job_id).length})</span></summary>
+            <PhotoUploader jobId={wo.job_id} userId={user.id} />
+            <PhotoGallery photos={photos.filter(p => p.job_id === wo.job_id)} userId={user.id} canEditAll={!isCrew} />
+          </details>
           <form action={updateWorkOrder} className="field" style={{ marginTop: 12 }}>
             <input type="hidden" name="id" value={wo.id} />
             <label htmlFor={`notes-${wo.id}`}>Crew notes</label>

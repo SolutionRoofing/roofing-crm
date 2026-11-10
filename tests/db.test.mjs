@@ -244,6 +244,22 @@ test('photos and storage: crews see and upload only on their own jobs', async ()
   });
 });
 
+test('photo files: crews delete only files they uploaded; bucket only takes images', async () => {
+  const bucket = await one(db, `select file_size_limit, allowed_mime_types from storage.buckets where id = 'job-photos'`);
+  assert.equal(Number(bucket.file_size_limit), 10485760);
+  assert.deepEqual(bucket.allowed_mime_types, ['image/jpeg', 'image/png', 'image/webp']);
+  // Crew A uploaded c.jpg in the previous test; a.jpg was uploaded by the office.
+  await as(db, u.crewA, async q => {
+    const mine = await q.query(`delete from storage.objects where name = $1`, [`${ids.job}/c.jpg`]);
+    assert.equal(mine.affectedRows, 1);
+    const theirs = await q.query(`delete from storage.objects where name = $1`, [`${ids.job}/a.jpg`]);
+    assert.equal(theirs.affectedRows, 0, 'crew cannot delete office photos');
+  });
+  await as(db, u.crewB, async q => {
+    assert.equal((await q.query(`delete from storage.objects where bucket_id = 'job-photos'`)).affectedRows, 0);
+  });
+});
+
 test('signed-out visitors and uninvited accounts see nothing', async () => {
   await asAnon(db, async q => {
     for (const t of ['jobs', 'contacts', 'profiles', 'work_orders', 'settings']) {

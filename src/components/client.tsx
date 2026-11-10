@@ -92,7 +92,7 @@ export function LiveRefresh() {
       timer = setTimeout(() => router.refresh(), 700);
     };
     const channel = supabase.channel('crm-live');
-    for (const table of ['jobs', 'contacts', 'tasks', 'events', 'work_orders', 'job_activity']) {
+    for (const table of ['jobs', 'contacts', 'tasks', 'events', 'work_orders', 'job_activity', 'photos']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh);
     }
     channel.subscribe();
