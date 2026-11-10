@@ -1,0 +1,263 @@
+// Permission and business-rule tests for the Supabase migrations.
+// Run with: npm run test:db
+import { test, before } from 'node:test';
+import assert from 'node:assert/strict';
+import { createTestDb, createUser, as, asAnon, one, all } from './helpers/db.mjs';
+
+let db;
+const u = {};
+const ids = {};
+
+before(async () => {
+  db = await createTestDb();
+  u.owner = await createUser(db, 'owner@example.com', 'Olivia Owner');
+  u.office = await createUser(db, 'office@example.com', 'Oscar Office');
+  u.rep1 = await createUser(db, 'rep1@example.com', 'Rita Rep');
+  u.rep2 = await createUser(db, 'rep2@example.com', 'Ray Rep');
+  u.crewA = await createUser(db, 'crewa@example.com', 'Alex Crew Lead');
+  u.crewB = await createUser(db, 'crewb@example.com', 'Blair Crew Lead');
+  u.stranger = await createUser(db, 'stranger@example.com', 'Not Invited');
+
+  await as(db, u.owner, async q => {
+    ids.crewA = (await one(q, `insert into crews (name) values ('Crew A') returning id`)).id;
+    ids.crewB = (await one(q, `insert into crews (name) values ('Crew B') returning id`)).id;
+    await q.query(`update profiles set role = 'office', active = true where id = $1`, [u.office]);
+    await q.query(`update profiles set role = 'rep', active = true where id in ($1, $2)`, [u.rep1, u.rep2]);
+    await q.query(`update profiles set role = 'crew', crew_id = $2, active = true where id = $1`, [u.crewA, ids.crewA]);
+    await q.query(`update profiles set role = 'crew', crew_id = $2, active = true where id = $1`, [u.crewB, ids.crewB]);
+  });
+});
+
+test('first account becomes the active owner; later sign-ups start inactive', async () => {
+  const owner = await one(db, `select role, active from profiles where id = $1`, [u.owner]);
+  assert.deepEqual(owner, { role: 'owner', active: true });
+  const stranger = await one(db, `select role, active from profiles where id = $1`, [u.stranger]);
+  assert.equal(stranger.active, false);
+});
+
+test('a crew profile must be tied to a crew', async () => {
+  await assert.rejects(
+    as(db, u.owner, q => q.query(`update profiles set role = 'crew', crew_id = null, active = true where id = $1`, [u.rep2])),
+    /crew_role_needs_crew/,
+  );
+});
+
+test('reps cannot change roles or company settings', async () => {
+  await as(db, u.rep1, async q => {
+    const r = await q.query(`update profiles set role = 'owner' where id = $1`, [u.rep1]);
+    assert.equal(r.affectedRows, 0);
+    const s = await q.query(`update settings set company = 'Hacked'`);
+    assert.equal(s.affectedRows, 0);
+  });
+  assert.equal((await one(db, `select role from profiles where id = $1`, [u.rep1])).role, 'rep');
+});
+
+test('office cannot create or change owners; nobody can lock themselves out', async () => {
+  await assert.rejects(
+    as(db, u.office, q => q.query(`update profiles set role = 'owner' where id = $1`, [u.office])),
+    /cannot change your own role/,
+  );
+  await assert.rejects(
+    as(db, u.office, q => q.query(`update profiles set role = 'owner' where id = $1`, [u.rep2])),
+    /Only an owner/,
+  );
+  await assert.rejects(
+    as(db, u.office, q => q.query(`update profiles set active = false where id = $1`, [u.owner])),
+    /Only an owner/,
+  );
+  await assert.rejects(
+    as(db, u.owner, q => q.query(`update profiles set active = false where id = $1`, [u.owner])),
+    /turn off your own access/,
+  );
+  // Office can still manage reps and crews.
+  await as(db, u.office, q => q.query(`update profiles set phone = '(555) 555-0123' where id = $1`, [u.rep2]));
+  assert.equal((await one(db, `select phone from profiles where id = $1`, [u.rep2])).phone, '(555) 555-0123');
+});
+
+test('new job queues the welcome email; marketing rules respect opt-in', async () => {
+  await as(db, u.rep1, async q => {
+    ids.contact = (await one(q, `insert into contacts (first, last, email, phone, address, city, st, zip, marketing)
+      values ('Avery', 'Thompson', 'avery@example.com', '(555) 555-0110', '1420 Maplewood Dr', 'Springfield', 'MO', '65801', false) returning id`)).id;
+    const job = await one(q, `insert into jobs (name, contact_id, rep_id, type, roof_type, squares, pitch)
+      values ('Thompson Re-roof', $1, $2, 'Retail', 'Asphalt shingle', 28, '6/12') returning id, number, stage`, [ids.contact, u.rep1]);
+    ids.job = job.id;
+    assert.equal(job.number, 1001);
+    assert.equal(job.stage, 'lead');
+  });
+  const mail = await all(db, `select subject, status from outbox where job_id = $1`, [ids.job]);
+  assert.equal(mail.length, 1);
+  assert.equal(mail[0].status, 'scheduled');
+  assert.match(mail[0].subject, /Thanks for contacting/);
+
+  // A marketing rule on 'inspected' must be skipped for a contact who has not opted in.
+  await as(db, u.owner, q => q.query(`insert into automation_rules (name, stage, template_id)
+    select 'Storm offer', 'inspected', id from templates where key = 't_storm'`));
+  await as(db, u.rep1, q => q.query(`update jobs set stage = 'inspected' where id = $1`, [ids.job]));
+  const storm = await one(db, `select o.status, o.reason from outbox o join templates t on t.id = o.template_id
+    where o.job_id = $1 and t.key = 't_storm'`, [ids.job]);
+  assert.deepEqual(storm, { status: 'skipped', reason: 'Contact has not opted in to marketing' });
+});
+
+test('leaving a stage cancels its stop-on-exit follow-ups and logs the move', async () => {
+  await as(db, u.rep1, q => q.query(`update jobs set stage = 'estimate' where id = $1`, [ids.job]));
+  let est = await all(db, `select status from outbox o join automation_rules r on r.id = o.rule_id
+    where o.job_id = $1 and r.stage = 'estimate'`, [ids.job]);
+  assert.deepEqual(est.map(x => x.status), ['scheduled', 'scheduled']);
+
+  await as(db, u.rep1, q => q.query(`update jobs set stage = 'sold' where id = $1`, [ids.job]));
+  est = await all(db, `select status, reason from outbox o join automation_rules r on r.id = o.rule_id
+    where o.job_id = $1 and r.stage = 'estimate'`, [ids.job]);
+  assert.ok(est.every(x => x.status === 'cancelled' && x.reason === 'Job left Estimate Sent'));
+
+  const job = await one(db, `select sold_at, stage_changed_at from jobs where id = $1`, [ids.job]);
+  assert.ok(job.sold_at, 'sold_at set when the job reaches Sold');
+  const log = await all(db, `select text from job_activity where job_id = $1 order by at`, [ids.job]);
+  assert.ok(log.some(l => l.text === 'Moved from Estimate Sent to Sold'));
+});
+
+test('reps see every job, including other reps\' jobs, but cannot delete jobs', async () => {
+  await as(db, u.rep2, async q => {
+    const jobs = await all(q, `select id from jobs`);
+    assert.equal(jobs.length, 1);
+    const del = await q.query(`delete from jobs where id = $1`, [ids.job]);
+    assert.equal(del.affectedRows, 0);
+  });
+  assert.ok(await one(db, `select 1 as ok from jobs where id = $1`, [ids.job]));
+});
+
+test('estimate numbering, accepted estimate and price-free work order', async () => {
+  await as(db, u.office, async q => {
+    const d = await one(q, `insert into documents (kind, job_id, status, items, tax_rate)
+      values ('estimate', $1, 'accepted', $2, 7.5) returning id, number`, [ids.job, JSON.stringify([
+      { desc: 'Tear-off existing roofing', qty: 28, unit: 'SQ', price: 65 },
+      { desc: 'Architectural shingles, installed', qty: 28, unit: 'SQ', price: 340 },
+    ])]);
+    ids.estimate = d.id;
+    assert.equal(d.number, 1);
+    ids.woA = (await one(q, `select create_work_order($1, $2, current_date + 3) as id`, [ids.job, ids.crewA])).id;
+  });
+  const wo = await one(db, `select scope, customer_name, site_address, job_number from work_orders where id = $1`, [ids.woA]);
+  assert.equal(wo.customer_name, 'Avery Thompson');
+  assert.equal(wo.site_address, '1420 Maplewood Dr, Springfield, MO 65801');
+  assert.equal(wo.job_number, 1001);
+  assert.equal(wo.scope.length, 2);
+  assert.ok(wo.scope.every(i => !('price' in i)), 'no prices copied into the scope');
+  assert.deepEqual(wo.scope[0], { desc: 'Tear-off existing roofing', qty: 28, unit: 'SQ' });
+});
+
+test('a work order can never hold prices', async () => {
+  await assert.rejects(
+    as(db, u.office, q => q.query(`insert into work_orders (job_id, crew_id, job_number, scope) values ($1, $2, 1001, $3)`,
+      [ids.job, ids.crewA, JSON.stringify([{ desc: 'Shingles', qty: 1, unit: 'SQ', price: 340 }])])),
+    /scope_has_no_prices/,
+  );
+});
+
+test('crews cannot read jobs, customers, money, settings or other crews\' work', async () => {
+  await as(db, u.crewA, async q => {
+    for (const t of ['jobs', 'contacts', 'documents', 'payments', 'settings', 'catalog_items', 'outbox', 'templates', 'job_activity', 'tasks']) {
+      const rows = await all(q, `select * from ${t}`);
+      assert.equal(rows.length, 0, `crew should see no rows in ${t}`);
+    }
+    const profiles = await all(q, `select id from profiles`);
+    assert.deepEqual(profiles.map(p => p.id), [u.crewA]);
+    const wos = await all(q, `select id from work_orders`);
+    assert.deepEqual(wos.map(w => w.id), [ids.woA]);
+  });
+  await as(db, u.crewB, async q => {
+    assert.equal((await all(q, `select id from work_orders`)).length, 0);
+    const r = await q.query(`update work_orders set status = 'done' where id = $1`, [ids.woA]);
+    assert.equal(r.affectedRows, 0, 'Crew B cannot touch Crew A\'s work order');
+  });
+});
+
+test('crews may change only status and notes; it advances the job', async () => {
+  await assert.rejects(
+    as(db, u.crewA, q => q.query(`update work_orders set customer_name = 'X' where id = $1`, [ids.woA])),
+    /Crews can only change/,
+  );
+  await assert.rejects(
+    as(db, u.crewA, q => q.query(`update work_orders set crew_id = $2 where id = $1`, [ids.woA, ids.crewB])),
+  );
+  await as(db, u.crewA, q => q.query(`update work_orders set status = 'in_progress', crew_notes = 'Gate code 4411' where id = $1`, [ids.woA]));
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [ids.job])).stage, 'progress');
+
+  await as(db, u.crewA, q => q.query(`update work_orders set status = 'done', completed_at = '2000-01-01' where id = $1`, [ids.woA]));
+  const wo = await one(db, `select status, started_at, completed_at from work_orders where id = $1`, [ids.woA]);
+  assert.equal(wo.status, 'done');
+  assert.ok(wo.started_at && wo.completed_at.getFullYear() > 2000, 'crew cannot backdate timestamps');
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [ids.job])).stage, 'complete');
+  const review = await one(db, `select o.status from outbox o join templates t on t.id = o.template_id
+    where o.job_id = $1 and t.key = 't_review'`, [ids.job]);
+  assert.equal(review.status, 'scheduled', 'review request queued when the crew finishes');
+});
+
+test('invoice payments: overpayment blocked, full payment marks the job paid', async () => {
+  await as(db, u.office, async q => {
+    ids.invoice = (await one(q, `insert into documents (kind, job_id, status, items, tax_rate, from_id)
+      select 'invoice', job_id, 'sent', items, tax_rate, id from documents where id = $1 returning id, number`, [ids.estimate])).id;
+  });
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [ids.job])).stage, 'invoiced');
+  // (28*65 + 28*340) = 11340, +7.5% tax 850.50 = 12190.50
+  await assert.rejects(
+    as(db, u.office, q => q.query(`insert into payments (document_id, amount) values ($1, 12190.51)`, [ids.invoice])),
+    /more than the balance/,
+  );
+  await as(db, u.office, q => q.query(`insert into payments (document_id, amount) values ($1, 6000)`, [ids.invoice]));
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [ids.job])).stage, 'invoiced');
+  await as(db, u.office, q => q.query(`insert into payments (document_id, amount) values ($1, 6190.50)`, [ids.invoice]));
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [ids.job])).stage, 'paid');
+});
+
+test('auto stage changes only move forward and never reopen a lost job', async () => {
+  let lostJob;
+  await as(db, u.rep1, async q => {
+    lostJob = (await one(q, `insert into jobs (name, contact_id, stage) values ('Lost one', $1, 'lost') returning id`, [ids.contact])).id;
+    await q.query(`insert into events (title, type, job_id, date) values ('Install', 'Install', $1, current_date)`, [lostJob]);
+  });
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [lostJob])).stage, 'lost');
+  await as(db, u.rep1, q => q.query(`insert into events (title, type, job_id, date) values ('Inspection', 'Inspection', $1, current_date)`, [ids.job]));
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [ids.job])).stage, 'paid', 'paid job not pulled back');
+});
+
+test('photos and storage: crews see and upload only on their own jobs', async () => {
+  let otherJob;
+  await as(db, u.office, async q => {
+    otherJob = (await one(q, `insert into jobs (name) values ('Other job') returning id`)).id;
+    await q.query(`insert into photos (job_id, storage_path) values ($1, $2), ($3, $4)`,
+      [ids.job, `${ids.job}/a.jpg`, otherJob, `${otherJob}/b.jpg`]);
+    await q.query(`insert into storage.objects (bucket_id, name) values ('job-photos', $1), ('job-photos', $2)`,
+      [`${ids.job}/a.jpg`, `${otherJob}/b.jpg`]);
+  });
+  await as(db, u.crewA, async q => {
+    assert.deepEqual((await all(q, `select storage_path from photos`)).map(p => p.storage_path), [`${ids.job}/a.jpg`]);
+    assert.deepEqual((await all(q, `select name from storage.objects`)).map(o => o.name), [`${ids.job}/a.jpg`]);
+    await q.query(`insert into photos (job_id, storage_path, uploaded_by) values ($1, $2, $3)`, [ids.job, `${ids.job}/c.jpg`, u.crewA]);
+    await q.query(`insert into storage.objects (bucket_id, name) values ('job-photos', $1)`, [`${ids.job}/c.jpg`]);
+  });
+  await assert.rejects(as(db, u.crewA, q => q.query(`insert into photos (job_id, storage_path, uploaded_by) values ($1, 'x.jpg', $2)`, [otherJob, u.crewA])));
+  await assert.rejects(as(db, u.crewA, q => q.query(`insert into storage.objects (bucket_id, name) values ('job-photos', $1)`, [`${otherJob}/evil.jpg`])));
+  await assert.rejects(as(db, u.crewA, q => q.query(`insert into storage.objects (bucket_id, name) values ('job-photos', 'not-a-uuid/x.jpg')`)));
+  await as(db, u.crewB, async q => {
+    assert.equal((await all(q, `select id from photos`)).length, 0);
+    assert.equal((await all(q, `select id from storage.objects`)).length, 0);
+  });
+});
+
+test('signed-out visitors and uninvited accounts see nothing', async () => {
+  await asAnon(db, async q => {
+    for (const t of ['jobs', 'contacts', 'profiles', 'work_orders', 'settings']) {
+      assert.equal((await all(q, `select * from ${t}`)).length, 0, `anon sees no ${t}`);
+    }
+  });
+  await as(db, u.stranger, async q => {
+    for (const t of ['jobs', 'contacts', 'work_orders', 'settings', 'crews']) {
+      assert.equal((await all(q, `select * from ${t}`)).length, 0, `inactive account sees no ${t}`);
+    }
+    assert.equal((await all(q, `select id from profiles`)).length, 1, 'only their own profile');
+  });
+});
+
+test('importer helper is not callable by signed-in users', async () => {
+  await assert.rejects(as(db, u.owner, q => q.query(`select sync_number_sequences()`)), /permission denied/);
+});

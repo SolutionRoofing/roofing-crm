@@ -1,0 +1,1919 @@
+{
+ "app": "roofing-crm",
+ "state": {
+  "version": 1,
+  "hasSample": true,
+  "settings": {
+   "company": "Your Roofing Company",
+   "phone": "",
+   "email": "",
+   "address": "",
+   "license": "",
+   "taxRate": 0,
+   "reviewUrl": "",
+   "terms": "Estimate valid for 30 days. Work is subject to the signed contract."
+  },
+  "team": [
+   {
+    "id": "mwa54arinxzhur",
+    "name": "Dana Whitfield",
+    "role": "Sales rep",
+    "type": "rep",
+    "sample": true
+   },
+   {
+    "id": "mwa54ari2ptq1q",
+    "name": "Marco Delgado",
+    "role": "Sales rep",
+    "type": "rep",
+    "sample": true
+   },
+   {
+    "id": "mwa54ari4snwcc",
+    "name": "Crew A",
+    "role": "Install crew",
+    "type": "crew",
+    "sample": true
+   },
+   {
+    "id": "mwa54ariouyhpn",
+    "name": "Crew B",
+    "role": "Install crew",
+    "type": "crew",
+    "sample": true
+   },
+   {
+    "id": "own_crew_c",
+    "name": "Crew C",
+    "role": "Install crew"
+   },
+   {
+    "id": "own_office",
+    "name": "Pat Office",
+    "role": "Office"
+   }
+  ],
+  "contacts": [
+   {
+    "id": "mwa54arih4dcbz",
+    "first": "Avery",
+    "last": "Thompson",
+    "phone": "(555) 555-0110",
+    "email": "avery.thompson@example.com",
+    "address": "1420 Maplewood Dr",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Referral",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1790825905278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ariqjlj7j",
+    "first": "Jordan",
+    "last": "Patel",
+    "phone": "(555) 555-0111",
+    "email": "jordan.patel@example.com",
+    "address": "88 Birch Hollow Ln",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Storm canvass",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1791085105278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ariijwwcx",
+    "first": "Casey",
+    "last": "Nguyen",
+    "phone": "(555) 555-0112",
+    "email": "casey.nguyen@example.com",
+    "address": "315 Ridgeline Ct",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Website",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1791344305278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ariiz92s1",
+    "first": "Riley",
+    "last": "Brooks",
+    "phone": "(555) 555-0113",
+    "email": "riley.brooks@example.com",
+    "address": "2207 Cedar Bend Rd",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Door knocking",
+    "tags": "",
+    "marketing": false,
+    "notes": "",
+    "createdAt": 1791603505278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ariau7kbz",
+    "first": "Morgan",
+    "last": "Ellis",
+    "phone": "(555) 555-0114",
+    "email": "morgan.ellis@example.com",
+    "address": "41 Sycamore St",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Google",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1791862705278,
+    "sample": true
+   },
+   {
+    "id": "mwa54arimy0v77",
+    "first": "Taylor",
+    "last": "Reyes",
+    "phone": "(555) 555-0115",
+    "email": "taylor.reyes@example.com",
+    "address": "906 Harvest Way",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Referral",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1792121905278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ariakttoa",
+    "first": "Quinn",
+    "last": "Foster",
+    "phone": "(555) 555-0116",
+    "email": "quinn.foster@example.com",
+    "address": "1733 Lakeview Ter",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Storm canvass",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1792381105278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ari390ixj",
+    "first": "Skyler",
+    "last": "Grant",
+    "phone": "(555) 555-0117",
+    "email": "skyler.grant@example.com",
+    "address": "62 Old Mill Rd",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Yard sign",
+    "tags": "",
+    "marketing": false,
+    "notes": "",
+    "createdAt": 1792640305278,
+    "sample": true
+   },
+   {
+    "id": "mwa54arifpbzvv",
+    "first": "Reese",
+    "last": "Coleman",
+    "phone": "(555) 555-0118",
+    "email": "reese.coleman@example.com",
+    "address": "510 Willow Creek Dr",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Website",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1792899505278,
+    "sample": true
+   },
+   {
+    "id": "mwa54arifk3oi0",
+    "first": "Parker",
+    "last": "Shah",
+    "phone": "(555) 555-0119",
+    "email": "parker.shah@example.com",
+    "address": "2981 Autumn Trail",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Facebook",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1793158705278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ari00yq0f",
+    "first": "Emerson",
+    "last": "Hayes",
+    "phone": "(555) 555-0120",
+    "email": "emerson.hayes@example.com",
+    "address": "77 Fox Run",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Referral",
+    "tags": "",
+    "marketing": true,
+    "notes": "",
+    "createdAt": 1793417905278,
+    "sample": true
+   },
+   {
+    "id": "mwa54ariblanf7",
+    "first": "Rowan",
+    "last": "Mitchell",
+    "phone": "(555) 555-0121",
+    "email": "rowan.mitchell@example.com",
+    "address": "1209 Stonegate Blvd",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65801",
+    "source": "Door knocking",
+    "tags": "",
+    "marketing": false,
+    "notes": "",
+    "createdAt": 1793677105278,
+    "sample": true
+   },
+   {
+    "id": "own_contact_1",
+    "first": "Jamie",
+    "last": "Lee",
+    "phone": "(555) 555-0150",
+    "email": "",
+    "address": "9 Elm St",
+    "city": "Springfield",
+    "st": "MO",
+    "zip": "65802",
+    "source": "Referral",
+    "tags": "vip",
+    "marketing": false,
+    "notes": "Dog in yard",
+    "createdAt": 1794109105279
+   }
+  ],
+  "jobs": [
+   {
+    "id": "mwa54arilg9zs3",
+    "number": 1001,
+    "name": "Thompson Re-roof",
+    "contactId": "mwa54arih4dcbz",
+    "stageId": "paid",
+    "stageChangedAt": 1794195505278,
+    "type": "Retail",
+    "roofType": "Asphalt shingle",
+    "squares": 28,
+    "pitch": "6/12",
+    "repId": "mwa54arinxzhur",
+    "value": 0,
+    "createdAt": 1791689905278,
+    "soldAt": 1793763505278,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arirpvdps",
+      "at": 1791689905278,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjr11yth",
+    "number": 1002,
+    "name": "Patel Storm Claim",
+    "contactId": "mwa54ariqjlj7j",
+    "stageId": "invoiced",
+    "stageChangedAt": 1793849905279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 34,
+    "pitch": "6/12",
+    "repId": "mwa54ari2ptq1q",
+    "value": 0,
+    "createdAt": 1791776305279,
+    "soldAt": 1793677105279,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "Prairie Home Insurance",
+     "claim": "CLM-40247",
+     "policy": "POL-88131",
+     "adjuster": "Sam Ortega",
+     "adjPhone": "(555) 555-0199",
+     "adjEmail": "adjuster@example.com",
+     "dateOfLoss": "2026-09-25",
+     "cause": "Hail",
+     "status": "Approved",
+     "deductible": 1500,
+     "acv": 12240,
+     "rcv": 17000,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjzfbz6p",
+      "at": 1791776305279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjc9jz1x",
+    "number": 1003,
+    "name": "Nguyen Storm Claim",
+    "contactId": "mwa54ariijwwcx",
+    "stageId": "progress",
+    "stageChangedAt": 1793504305279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 26,
+    "pitch": "6/12",
+    "repId": "mwa54arinxzhur",
+    "value": 0,
+    "createdAt": 1791862705279,
+    "soldAt": 1793590705279,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "Evergreen Mutual",
+     "claim": "CLM-40284",
+     "policy": "POL-88142",
+     "adjuster": "Sam Ortega",
+     "adjPhone": "(555) 555-0199",
+     "adjEmail": "adjuster@example.com",
+     "dateOfLoss": "2026-09-25",
+     "cause": "Hail",
+     "status": "Approved",
+     "deductible": 1500,
+     "acv": 9360,
+     "rcv": 13000,
+     "supplements": [
+      {
+       "id": "mwa54arjz7q5a4",
+       "desc": "Additional ice & water shield",
+       "amount": 840,
+       "status": "Approved"
+      }
+     ]
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arj48l0io",
+      "at": 1791862705279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arj1xwx7w",
+    "number": 1004,
+    "name": "Brooks Storm Claim",
+    "contactId": "mwa54ariiz92s1",
+    "stageId": "scheduled",
+    "stageChangedAt": 1793158705279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 31,
+    "pitch": "6/12",
+    "repId": "mwa54ari2ptq1q",
+    "value": 0,
+    "createdAt": 1791949105279,
+    "soldAt": 1793504305279,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "Prairie Home Insurance",
+     "claim": "CLM-40321",
+     "policy": "POL-88153",
+     "adjuster": "Sam Ortega",
+     "adjPhone": "(555) 555-0199",
+     "adjEmail": "adjuster@example.com",
+     "dateOfLoss": "2026-09-25",
+     "cause": "Hail",
+     "status": "Approved",
+     "deductible": 1500,
+     "acv": 11160,
+     "rcv": 15500,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjw1uy1u",
+      "at": 1791949105279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjn8aylh",
+    "number": 1005,
+    "name": "Ellis Re-roof",
+    "contactId": "mwa54ariau7kbz",
+    "stageId": "sold",
+    "stageChangedAt": 1792813105279,
+    "type": "Retail",
+    "roofType": "Asphalt shingle",
+    "squares": 22,
+    "pitch": "6/12",
+    "repId": "mwa54arinxzhur",
+    "value": 0,
+    "createdAt": 1792035505279,
+    "soldAt": 1793417905279,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arj9n4rdo",
+      "at": 1792035505279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arj6x1rlr",
+    "number": 1006,
+    "name": "Reyes Storm Claim",
+    "contactId": "mwa54arimy0v77",
+    "stageId": "claim",
+    "stageChangedAt": 1794195505279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 37,
+    "pitch": "6/12",
+    "repId": "mwa54ari2ptq1q",
+    "value": 0,
+    "createdAt": 1792121905279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "Prairie Home Insurance",
+     "claim": "CLM-40395",
+     "policy": "POL-88175",
+     "adjuster": "Sam Ortega",
+     "adjPhone": "(555) 555-0199",
+     "adjEmail": "adjuster@example.com",
+     "dateOfLoss": "2026-09-25",
+     "cause": "Hail",
+     "status": "In review",
+     "deductible": 1500,
+     "acv": 13320,
+     "rcv": 18500,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjyt6uyr",
+      "at": 1792121905279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arj8er35a",
+    "number": 1007,
+    "name": "Foster Storm Claim",
+    "contactId": "mwa54ariakttoa",
+    "stageId": "estimate",
+    "stageChangedAt": 1793849905279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 29,
+    "pitch": "6/12",
+    "repId": "mwa54arinxzhur",
+    "value": 0,
+    "createdAt": 1792208305279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "Evergreen Mutual",
+     "claim": "CLM-40432",
+     "policy": "POL-88186",
+     "adjuster": "Sam Ortega",
+     "adjPhone": "(555) 555-0199",
+     "adjEmail": "adjuster@example.com",
+     "dateOfLoss": "2026-09-25",
+     "cause": "Hail",
+     "status": "In review",
+     "deductible": 1500,
+     "acv": 10440,
+     "rcv": 14500,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjbseiwf",
+      "at": 1792208305279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjnd87dl",
+    "number": 1008,
+    "name": "Grant Re-roof",
+    "contactId": "mwa54ari390ixj",
+    "stageId": "estimate",
+    "stageChangedAt": 1793504305279,
+    "type": "Retail",
+    "roofType": "Asphalt shingle",
+    "squares": 18,
+    "pitch": "6/12",
+    "repId": "mwa54ari2ptq1q",
+    "value": 0,
+    "createdAt": 1792294705279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjzxwfzv",
+      "at": 1792294705279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arj63hsi0",
+    "number": 1009,
+    "name": "Coleman Storm Claim",
+    "contactId": "mwa54arifpbzvv",
+    "stageId": "inspected",
+    "stageChangedAt": 1793158705279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 24,
+    "pitch": "6/12",
+    "repId": "mwa54arinxzhur",
+    "value": 0,
+    "createdAt": 1792381105279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "Evergreen Mutual",
+     "claim": "CLM-40506",
+     "policy": "POL-88208",
+     "adjuster": "Sam Ortega",
+     "adjPhone": "(555) 555-0199",
+     "adjEmail": "adjuster@example.com",
+     "dateOfLoss": "2026-09-25",
+     "cause": "Hail",
+     "status": "In review",
+     "deductible": 1500,
+     "acv": 8640,
+     "rcv": 12000,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjzanb1e",
+      "at": 1792381105279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjg50m5z",
+    "number": 1010,
+    "name": "Shah Storm Claim",
+    "contactId": "mwa54arifk3oi0",
+    "stageId": "insp",
+    "stageChangedAt": 1792813105279,
+    "type": "Insurance",
+    "roofType": "Asphalt shingle",
+    "squares": 0,
+    "pitch": "6/12",
+    "repId": "mwa54ari2ptq1q",
+    "value": 0,
+    "createdAt": 1792467505279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjmw0aui",
+      "at": 1792467505279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjb9umcb",
+    "number": 1011,
+    "name": "Hayes Re-roof",
+    "contactId": "mwa54ari00yq0f",
+    "stageId": "lead",
+    "stageChangedAt": 1794195505279,
+    "type": "Retail",
+    "roofType": "Asphalt shingle",
+    "squares": 0,
+    "pitch": "6/12",
+    "repId": "mwa54arinxzhur",
+    "value": 0,
+    "createdAt": 1792553905279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arjvhnbhk",
+      "at": 1792553905279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "mwa54arjkd32dc",
+    "number": 1012,
+    "name": "Mitchell Re-roof",
+    "contactId": "mwa54ariblanf7",
+    "stageId": "lost",
+    "stageChangedAt": 1793849905279,
+    "type": "Retail",
+    "roofType": "Asphalt shingle",
+    "squares": 20,
+    "pitch": "6/12",
+    "repId": "mwa54ari2ptq1q",
+    "value": 0,
+    "createdAt": 1792640305279,
+    "soldAt": null,
+    "lostReason": "Went with a competitor",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 0,
+    "sample": true,
+    "activity": [
+     {
+      "id": "mwa54arj3kdlqx",
+      "at": 1792640305279,
+      "kind": "system",
+      "text": "Job created from sample data"
+     }
+    ]
+   },
+   {
+    "id": "own_job_1",
+    "number": 1013,
+    "name": "Lee Repair",
+    "contactId": "own_contact_1",
+    "stageId": "estimate",
+    "stageChangedAt": 1794195505279,
+    "type": "Retail",
+    "roofType": "Metal",
+    "squares": 12,
+    "pitch": "4/12",
+    "repId": "own_office",
+    "value": 0,
+    "createdAt": 1794109105279,
+    "soldAt": null,
+    "lostReason": "",
+    "insurance": {
+     "carrier": "",
+     "claim": "",
+     "policy": "",
+     "adjuster": "",
+     "adjPhone": "",
+     "adjEmail": "",
+     "dateOfLoss": "",
+     "cause": "",
+     "status": "Not filed",
+     "deductible": 0,
+     "acv": 0,
+     "rcv": 0,
+     "supplements": []
+    },
+    "photoCount": 1,
+    "activity": [
+     {
+      "id": "a1",
+      "at": 1794195505279,
+      "kind": "note",
+      "text": "Customer prefers mornings"
+     }
+    ]
+   }
+  ],
+  "documents": [
+   {
+    "id": "mwa54ari1mpx08",
+    "kind": "estimate",
+    "number": 1,
+    "jobId": "mwa54arilg9zs3",
+    "status": "accepted",
+    "date": "2026-10-28",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arikbef6k",
+      "desc": "Tear-off existing roofing",
+      "qty": 28,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54ariwsddoh",
+      "desc": "Architectural shingles, installed",
+      "qty": 28,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arik90rrv",
+      "desc": "Synthetic underlayment",
+      "qty": 28,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54ariohrw8g",
+      "desc": "Drip edge",
+      "qty": 168,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54ari5pz8us",
+      "desc": "Ridge vent",
+      "qty": 42,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54ari7p8jsb",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54ari6efown",
+    "kind": "invoice",
+    "number": 1,
+    "jobId": "mwa54arilg9zs3",
+    "status": "sent",
+    "date": "2026-11-01",
+    "dueDate": "2026-11-15",
+    "items": [
+     {
+      "id": "mwa54arijm68dg",
+      "desc": "Tear-off existing roofing",
+      "qty": 28,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54ari2vzy32",
+      "desc": "Architectural shingles, installed",
+      "qty": 28,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54ariie6vj1",
+      "desc": "Synthetic underlayment",
+      "qty": 28,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54ariz0nu1l",
+      "desc": "Drip edge",
+      "qty": 168,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arirsn3mo",
+      "desc": "Ridge vent",
+      "qty": 42,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arin79qa1",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [
+     {
+      "id": "mwa54arjs3rm3z",
+      "date": "2026-11-06",
+      "amount": 13556,
+      "method": "Check",
+      "note": ""
+     }
+    ],
+    "sample": true,
+    "fromId": "mwa54ari1mpx08"
+   },
+   {
+    "id": "mwa54arjtki4pb",
+    "kind": "estimate",
+    "number": 2,
+    "jobId": "mwa54arjr11yth",
+    "status": "accepted",
+    "date": "2026-10-29",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjujw5c9",
+      "desc": "Tear-off existing roofing",
+      "qty": 34,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arj11eta7",
+      "desc": "Architectural shingles, installed",
+      "qty": 34,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjgb4w6v",
+      "desc": "Synthetic underlayment",
+      "qty": 34,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arjdpd4cr",
+      "desc": "Drip edge",
+      "qty": 204,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arjho95x3",
+      "desc": "Ridge vent",
+      "qty": 51,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arj9nndy7",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arj7n6ecg",
+    "kind": "invoice",
+    "number": 2,
+    "jobId": "mwa54arjr11yth",
+    "status": "sent",
+    "date": "2026-11-01",
+    "dueDate": "2026-11-08",
+    "items": [
+     {
+      "id": "mwa54arjhmj0es",
+      "desc": "Tear-off existing roofing",
+      "qty": 34,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arjtykqvd",
+      "desc": "Architectural shingles, installed",
+      "qty": 34,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjcwhirn",
+      "desc": "Synthetic underlayment",
+      "qty": 34,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arjjagmti",
+      "desc": "Drip edge",
+      "qty": 204,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arj1v99qi",
+      "desc": "Ridge vent",
+      "qty": 51,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjb3kvc9",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [
+     {
+      "id": "mwa54arjslxveo",
+      "date": "2026-11-06",
+      "amount": 8171.5,
+      "method": "Check",
+      "note": ""
+     }
+    ],
+    "sample": true,
+    "fromId": "mwa54arjtki4pb"
+   },
+   {
+    "id": "mwa54arjhlv9ki",
+    "kind": "estimate",
+    "number": 3,
+    "jobId": "mwa54arjc9jz1x",
+    "status": "accepted",
+    "date": "2026-10-30",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjk6548f",
+      "desc": "Tear-off existing roofing",
+      "qty": 26,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arjb8z5qq",
+      "desc": "Architectural shingles, installed",
+      "qty": 26,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjb14byy",
+      "desc": "Synthetic underlayment",
+      "qty": 26,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arja15bj7",
+      "desc": "Drip edge",
+      "qty": 156,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arjv85qfs",
+      "desc": "Ridge vent",
+      "qty": 39,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjayr9on",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arjdcyk9p",
+    "kind": "estimate",
+    "number": 4,
+    "jobId": "mwa54arj1xwx7w",
+    "status": "accepted",
+    "date": "2026-10-31",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjpmtovh",
+      "desc": "Tear-off existing roofing",
+      "qty": 31,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arj8731ct",
+      "desc": "Architectural shingles, installed",
+      "qty": 31,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjk33h97",
+      "desc": "Synthetic underlayment",
+      "qty": 31,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arjv87sf1",
+      "desc": "Drip edge",
+      "qty": 186,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arj0i20uj",
+      "desc": "Ridge vent",
+      "qty": 47,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjgfkqfp",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arjikraij",
+    "kind": "estimate",
+    "number": 5,
+    "jobId": "mwa54arjn8aylh",
+    "status": "accepted",
+    "date": "2026-11-01",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjrm19i7",
+      "desc": "Tear-off existing roofing",
+      "qty": 22,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arj0srhzn",
+      "desc": "Architectural shingles, installed",
+      "qty": 22,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjrhj4br",
+      "desc": "Synthetic underlayment",
+      "qty": 22,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arjjdfc08",
+      "desc": "Drip edge",
+      "qty": 132,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arjt0lpby",
+      "desc": "Ridge vent",
+      "qty": 33,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjxmegta",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arjsamr67",
+    "kind": "estimate",
+    "number": 6,
+    "jobId": "mwa54arj6x1rlr",
+    "status": "sent",
+    "date": "2026-11-02",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjkww5om",
+      "desc": "Tear-off existing roofing",
+      "qty": 37,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arjayl6hc",
+      "desc": "Architectural shingles, installed",
+      "qty": 37,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjq3wow1",
+      "desc": "Synthetic underlayment",
+      "qty": 37,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arj673inl",
+      "desc": "Drip edge",
+      "qty": 222,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arjwthuii",
+      "desc": "Ridge vent",
+      "qty": 56,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arj6jntk6",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arjhffqiq",
+    "kind": "estimate",
+    "number": 7,
+    "jobId": "mwa54arj8er35a",
+    "status": "sent",
+    "date": "2026-11-03",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjnto0ro",
+      "desc": "Tear-off existing roofing",
+      "qty": 29,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arjuj28kb",
+      "desc": "Architectural shingles, installed",
+      "qty": 29,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arj2hvl51",
+      "desc": "Synthetic underlayment",
+      "qty": 29,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arj77rbw4",
+      "desc": "Drip edge",
+      "qty": 174,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arjahiy9t",
+      "desc": "Ridge vent",
+      "qty": 44,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjs7ccsk",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arjppnvso",
+    "kind": "estimate",
+    "number": 8,
+    "jobId": "mwa54arjnd87dl",
+    "status": "sent",
+    "date": "2026-11-04",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjpz75t4",
+      "desc": "Tear-off existing roofing",
+      "qty": 18,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arj7qvpak",
+      "desc": "Architectural shingles, installed",
+      "qty": 18,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjxawedp",
+      "desc": "Synthetic underlayment",
+      "qty": 18,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arjgtvegz",
+      "desc": "Drip edge",
+      "qty": 108,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arj6kxsd0",
+      "desc": "Ridge vent",
+      "qty": 27,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjjwzhzc",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "mwa54arjmeu5rs",
+    "kind": "estimate",
+    "number": 9,
+    "jobId": "mwa54arjkd32dc",
+    "status": "declined",
+    "date": "2026-11-08",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "mwa54arjgegqgm",
+      "desc": "Tear-off existing roofing",
+      "qty": 20,
+      "unit": "SQ",
+      "price": 65
+     },
+     {
+      "id": "mwa54arjeu5z87",
+      "desc": "Architectural shingles, installed",
+      "qty": 20,
+      "unit": "SQ",
+      "price": 340
+     },
+     {
+      "id": "mwa54arjh7apqi",
+      "desc": "Synthetic underlayment",
+      "qty": 20,
+      "unit": "SQ",
+      "price": 25
+     },
+     {
+      "id": "mwa54arjrr3jnw",
+      "desc": "Drip edge",
+      "qty": 120,
+      "unit": "LF",
+      "price": 3.5
+     },
+     {
+      "id": "mwa54arjns2pgz",
+      "desc": "Ridge vent",
+      "qty": 30,
+      "unit": "LF",
+      "price": 9
+     },
+     {
+      "id": "mwa54arjnvcs3j",
+      "desc": "Dumpster & disposal",
+      "qty": 1,
+      "unit": "EA",
+      "price": 550
+     }
+    ],
+    "taxRate": 0,
+    "notes": "",
+    "payments": [],
+    "sample": true
+   },
+   {
+    "id": "own_est_1",
+    "kind": "estimate",
+    "number": 10,
+    "jobId": "own_job_1",
+    "status": "sent",
+    "date": "2026-11-09",
+    "dueDate": "",
+    "items": [
+     {
+      "id": "l1",
+      "desc": "Pipe boot",
+      "qty": 3,
+      "unit": "EA",
+      "price": 45
+     }
+    ],
+    "taxRate": 7.5,
+    "notes": "",
+    "payments": []
+   }
+  ],
+  "tasks": [
+   {
+    "id": "mwa54arjxiwol3",
+    "title": "Call homeowner about estimate",
+    "jobId": "mwa54arjnd87dl",
+    "assigneeId": "mwa54ari2ptq1q",
+    "due": "2026-11-08",
+    "done": false,
+    "sample": true
+   },
+   {
+    "id": "mwa54arjy272ov",
+    "title": "Upload adjuster scope",
+    "jobId": "mwa54arj6x1rlr",
+    "assigneeId": "mwa54ari2ptq1q",
+    "due": "2026-11-09",
+    "done": false,
+    "sample": true
+   },
+   {
+    "id": "mwa54arjexj0f3",
+    "title": "Order materials",
+    "jobId": "mwa54arjn8aylh",
+    "assigneeId": "mwa54arinxzhur",
+    "due": "2026-11-09",
+    "done": false,
+    "sample": true
+   },
+   {
+    "id": "mwa54arja66xoq",
+    "title": "Confirm dumpster delivery",
+    "jobId": "mwa54arj1xwx7w",
+    "assigneeId": "mwa54ari4snwcc",
+    "due": "2026-11-11",
+    "done": false,
+    "sample": true
+   },
+   {
+    "id": "mwa54arj2v21dg",
+    "title": "Collect depreciation paperwork",
+    "jobId": "mwa54arjr11yth",
+    "assigneeId": "mwa54ari2ptq1q",
+    "due": "2026-11-13",
+    "done": false,
+    "sample": true
+   },
+   {
+    "id": "own_task_1",
+    "title": "Order boots",
+    "jobId": "own_job_1",
+    "assigneeId": "own_crew_c",
+    "due": "2026-11-09",
+    "done": false
+   }
+  ],
+  "events": [
+   {
+    "id": "mwa54arju8c7ln",
+    "title": "Roof inspection",
+    "type": "Inspection",
+    "jobId": "mwa54arjg50m5z",
+    "assigneeId": "mwa54ari2ptq1q",
+    "date": "2026-11-09",
+    "time": "10:00",
+    "notes": "",
+    "sample": true
+   },
+   {
+    "id": "mwa54arj2ajohe",
+    "title": "Adjuster meeting on site",
+    "type": "Adjuster meeting",
+    "jobId": "mwa54arj6x1rlr",
+    "assigneeId": "mwa54ari2ptq1q",
+    "date": "2026-11-10",
+    "time": "13:30",
+    "notes": "",
+    "sample": true
+   },
+   {
+    "id": "mwa54arjg02b13",
+    "title": "Tear-off and install",
+    "type": "Install",
+    "jobId": "mwa54arj1xwx7w",
+    "assigneeId": "mwa54ari4snwcc",
+    "date": "2026-11-12",
+    "time": "07:30",
+    "notes": "",
+    "sample": true
+   },
+   {
+    "id": "mwa54arjl1aisf",
+    "title": "Finish install and cleanup",
+    "type": "Install",
+    "jobId": "mwa54arjc9jz1x",
+    "assigneeId": "mwa54ariouyhpn",
+    "date": "2026-11-09",
+    "time": "07:30",
+    "notes": "",
+    "sample": true
+   },
+   {
+    "id": "mwa54arjd5oi4u",
+    "title": "Roof inspection",
+    "type": "Inspection",
+    "jobId": "mwa54arjb9umcb",
+    "assigneeId": "mwa54arinxzhur",
+    "date": "2026-11-11",
+    "time": "15:00",
+    "notes": "",
+    "sample": true
+   },
+   {
+    "id": "own_ev_1",
+    "title": "Repair",
+    "type": "Repair",
+    "jobId": "own_job_1",
+    "assigneeId": "own_crew_c",
+    "date": "2026-11-09",
+    "time": "08:00",
+    "notes": ""
+   }
+  ],
+  "templates": [
+   {
+    "id": "t_welcome",
+    "name": "New lead welcome",
+    "kind": "followup",
+    "subject": "Thanks for contacting {{company}}",
+    "body": "Hi {{first_name}},\n\nThanks for reaching out about the roof at {{address}}. {{rep_name}} will contact you shortly to set up a free inspection.\n\nQuestions in the meantime? Call us at {{company_phone}}.\n\n{{company}}"
+   },
+   {
+    "id": "t_est1",
+    "name": "Estimate follow-up 1",
+    "kind": "followup",
+    "subject": "Any questions about your roofing estimate?",
+    "body": "Hi {{first_name}},\n\nI wanted to check that you received your estimate for {{address}}. Happy to walk through any of it with you.\n\n{{rep_name}}\n{{company}} | {{company_phone}}"
+   },
+   {
+    "id": "t_est2",
+    "name": "Estimate follow-up 2",
+    "kind": "followup",
+    "subject": "Still thinking over your roof?",
+    "body": "Hi {{first_name}},\n\nJust following up on your roofing estimate. If the timing or scope needs adjusting, let me know and we can work through it together.\n\n{{rep_name}}\n{{company}} | {{company_phone}}"
+   },
+   {
+    "id": "t_claim",
+    "name": "Claim check-in",
+    "kind": "followup",
+    "subject": "Checking in on your insurance claim",
+    "body": "Hi {{first_name}},\n\nHas your insurance carrier sent an update or a scope of loss for {{address}}? If so, send it over and we will review it for anything that was missed.\n\n{{rep_name}}\n{{company}} | {{company_phone}}"
+   },
+   {
+    "id": "t_install",
+    "name": "Install preparation",
+    "kind": "followup",
+    "subject": "Getting ready for your new roof",
+    "body": "Hi {{first_name}},\n\nYour install at {{address}} is on the schedule. Before the crew arrives, please move vehicles out of the driveway and take down fragile items hanging on interior walls.\n\nQuestions? Call us at {{company_phone}}.\n\n{{company}}"
+   },
+   {
+    "id": "t_review",
+    "name": "Review request",
+    "kind": "followup",
+    "subject": "How did we do, {{first_name}}?",
+    "body": "Hi {{first_name}},\n\nThank you for trusting {{company}} with your roof. If you are happy with the work, a short review would mean a lot to our team:\n\n{{review_link}}\n\n{{rep_name}}"
+   },
+   {
+    "id": "t_referral",
+    "name": "Referral ask",
+    "kind": "followup",
+    "subject": "Know a neighbor who needs a roof?",
+    "body": "Hi {{first_name}},\n\nWe hope your new roof is treating you well. If a friend or neighbor needs a roof inspection, we would be grateful for the introduction.\n\n{{company}} | {{company_phone}}"
+   },
+   {
+    "id": "t_lost",
+    "name": "Lost lead check-back",
+    "kind": "followup",
+    "subject": "Still need help with your roof?",
+    "body": "Hi {{first_name}},\n\nIt has been a while since we talked about the roof at {{address}}. If anything has changed, we would be glad to take another look.\n\n{{company}} | {{company_phone}}"
+   },
+   {
+    "id": "t_storm",
+    "name": "Storm season inspection offer",
+    "kind": "marketing",
+    "subject": "Free roof inspection after storm season",
+    "body": "Hi {{first_name}},\n\nHail and wind damage is not always visible from the ground. {{company}} is offering free roof inspections for homeowners in the area this month.\n\nReply to this email or call {{company_phone}} to get on the schedule."
+   },
+   {
+    "id": "t_maint",
+    "name": "Annual maintenance reminder",
+    "kind": "marketing",
+    "subject": "Time for your annual roof check-up",
+    "body": "Hi {{first_name}},\n\nA quick yearly check-up catches small problems before they turn into leaks. Reply to this email or call {{company_phone}} and we will find a time.\n\n{{company}}"
+   }
+  ],
+  "rules": [
+   {
+    "id": "mwa54arhjtkzjs",
+    "name": "Welcome new leads",
+    "stageId": "lead",
+    "delayDays": 0,
+    "templateId": "t_welcome",
+    "stopOnExit": false,
+    "active": true
+   },
+   {
+    "id": "mwa54arh28dwgl",
+    "name": "Estimate follow-up after 2 days",
+    "stageId": "estimate",
+    "delayDays": 2,
+    "templateId": "t_est1",
+    "stopOnExit": true,
+    "active": true
+   },
+   {
+    "id": "mwa54arhc22onq",
+    "name": "Estimate follow-up after 5 days",
+    "stageId": "estimate",
+    "delayDays": 5,
+    "templateId": "t_est2",
+    "stopOnExit": true,
+    "active": true
+   },
+   {
+    "id": "mwa54arhhx6s9b",
+    "name": "Claim check-in after 7 days",
+    "stageId": "claim",
+    "delayDays": 7,
+    "templateId": "t_claim",
+    "stopOnExit": true,
+    "active": true
+   },
+   {
+    "id": "mwa54arh1kigmk",
+    "name": "Install preparation",
+    "stageId": "scheduled",
+    "delayDays": 0,
+    "templateId": "t_install",
+    "stopOnExit": false,
+    "active": true
+   },
+   {
+    "id": "mwa54arhlwp7of",
+    "name": "Ask for a review",
+    "stageId": "complete",
+    "delayDays": 3,
+    "templateId": "t_review",
+    "stopOnExit": false,
+    "active": true
+   },
+   {
+    "id": "mwa54arh5clogj",
+    "name": "Ask for referrals",
+    "stageId": "paid",
+    "delayDays": 30,
+    "templateId": "t_referral",
+    "stopOnExit": false,
+    "active": true
+   },
+   {
+    "id": "mwa54arhvmky9i",
+    "name": "Check back on lost leads",
+    "stageId": "lost",
+    "delayDays": 90,
+    "templateId": "t_lost",
+    "stopOnExit": true,
+    "active": true
+   }
+  ],
+  "outbox": [
+   {
+    "id": "mwa54arj91i0wa",
+    "ruleId": null,
+    "templateId": "t_est1",
+    "jobId": "mwa54arjnd87dl",
+    "contactId": "mwa54ari390ixj",
+    "to": "skyler.grant@example.com",
+    "subject": "Any questions about your roofing estimate?",
+    "body": "Hi {{first_name}},\n\nI wanted to check that you received your estimate for {{address}}. Happy to walk through any of it with you.\n\n{{rep_name}}\n{{company}} | {{company_phone}}",
+    "kind": "followup",
+    "sendAt": 1794195505279,
+    "status": "scheduled",
+    "sample": true
+   },
+   {
+    "id": "mwa54arjzpvzut",
+    "ruleId": null,
+    "templateId": "t_est2",
+    "jobId": "mwa54arj8er35a",
+    "contactId": "mwa54ariakttoa",
+    "to": "quinn.foster@example.com",
+    "subject": "Still thinking over your roof?",
+    "body": "Hi {{first_name}},\n\nJust following up on your roofing estimate. If the timing or scope needs adjusting, let me know and we can work through it together.\n\n{{rep_name}}\n{{company}} | {{company_phone}}",
+    "kind": "followup",
+    "sendAt": 1794541105279,
+    "status": "scheduled",
+    "sample": true
+   },
+   {
+    "id": "mwa54arjpeyj11",
+    "ruleId": null,
+    "templateId": "t_claim",
+    "jobId": "mwa54arj6x1rlr",
+    "contactId": "mwa54arimy0v77",
+    "to": "taylor.reyes@example.com",
+    "subject": "Checking in on your insurance claim",
+    "body": "Hi {{first_name}},\n\nHas your insurance carrier sent an update or a scope of loss for {{address}}? If so, send it over and we will review it for anything that was missed.\n\n{{rep_name}}\n{{company}} | {{company_phone}}",
+    "kind": "followup",
+    "sendAt": 1794454705279,
+    "status": "scheduled",
+    "sample": true
+   },
+   {
+    "id": "mwa54arje4ci5g",
+    "ruleId": null,
+    "templateId": "t_welcome",
+    "jobId": "mwa54arjb9umcb",
+    "contactId": "mwa54ari00yq0f",
+    "to": "emerson.hayes@example.com",
+    "subject": "Thanks for contacting {{company}}",
+    "body": "Hi {{first_name}},\n\nThanks for reaching out about the roof at {{address}}. {{rep_name}} will contact you shortly to set up a free inspection.\n\nQuestions in the meantime? Call us at {{company_phone}}.\n\n{{company}}",
+    "kind": "followup",
+    "sendAt": 1794281905279,
+    "status": "scheduled",
+    "sample": true
+   }
+  ],
+  "campaigns": [],
+  "catalog": [
+   {
+    "id": "mwa54arhzfibht",
+    "desc": "Tear-off existing roofing",
+    "unit": "SQ",
+    "price": 65
+   },
+   {
+    "id": "mwa54arhb87j7i",
+    "desc": "Architectural shingles, installed",
+    "unit": "SQ",
+    "price": 340
+   },
+   {
+    "id": "mwa54arh88ae6r",
+    "desc": "Synthetic underlayment",
+    "unit": "SQ",
+    "price": 25
+   },
+   {
+    "id": "mwa54arhk7w75v",
+    "desc": "Ice & water shield",
+    "unit": "SQ",
+    "price": 110
+   },
+   {
+    "id": "mwa54arie9o0lr",
+    "desc": "Steep pitch charge",
+    "unit": "SQ",
+    "price": 40
+   },
+   {
+    "id": "mwa54aridciigp",
+    "desc": "Drip edge",
+    "unit": "LF",
+    "price": 3.5
+   },
+   {
+    "id": "mwa54aripbobmk",
+    "desc": "Ridge vent",
+    "unit": "LF",
+    "price": 9
+   },
+   {
+    "id": "mwa54ari3n8z7b",
+    "desc": "Step flashing",
+    "unit": "LF",
+    "price": 18
+   },
+   {
+    "id": "mwa54arix5zut0",
+    "desc": "Pipe boot",
+    "unit": "EA",
+    "price": 45
+   },
+   {
+    "id": "mwa54arief3ph8",
+    "desc": "Dumpster & disposal",
+    "unit": "EA",
+    "price": 550
+   },
+   {
+    "id": "mwa54ariux117w",
+    "desc": "Permit",
+    "unit": "EA",
+    "price": 250
+   }
+  ],
+  "counters": {
+   "job": 1014,
+   "estimate": 11,
+   "invoice": 3
+  }
+ },
+ "photos": [
+  {
+   "id": "own_photo_1",
+   "jobId": "own_job_1",
+   "category": "Damage",
+   "caption": "Cracked boot",
+   "data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==",
+   "at": 1794281905279
+  },
+  {
+   "id": "sample_photo_1",
+   "jobId": "mwa54arilg9zs3",
+   "category": "Before",
+   "caption": "",
+   "data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==",
+   "at": 1794281905279
+  }
+ ]
+}
