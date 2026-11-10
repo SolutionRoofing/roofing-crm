@@ -17,6 +17,31 @@ export async function saveMyProfile(_prev: FormState, fd: FormData): Promise<For
   return { ok: 'Saved.' };
 }
 
+/** Price list rows used by the estimate editor. Owner/office only (enforced by the database too). */
+export async function saveCatalogItem(fd: FormData) {
+  await requireUser(['owner', 'office']);
+  const id = String(fd.get('id') ?? '');
+  const description = text(fd, 'description', 200);
+  if (!description) return;
+  const row = { description, unit: text(fd, 'unit', 10) || 'EA', price: Math.round(number(fd, 'price') * 100) / 100 };
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from('catalog_items').update(row).eq('id', id)
+    : await supabase.from('catalog_items').insert({ ...row, sort: 1000 });
+  if (error) throw new Error(error.message);
+  revalidatePath('/settings');
+}
+
+export async function deleteCatalogItem(fd: FormData) {
+  await requireUser(['owner', 'office']);
+  const id = String(fd.get('id') ?? '');
+  if (!id) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from('catalog_items').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/settings');
+}
+
 /** Company details used on estimates, invoices and in emails. Owner/office only. */
 export async function saveCompany(_prev: FormState, fd: FormData): Promise<FormState> {
   await requireUser(['owner', 'office']);

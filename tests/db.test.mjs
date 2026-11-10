@@ -277,6 +277,67 @@ test('anyone can edit their own name and phone, but not their role', async () =>
   await assert.rejects(asAnon(db, q => q.query(`select update_my_profile('x', 'y')`)), /permission denied/);
 });
 
+test('share link and e-sign: customer signs, job moves to Sold, signed estimate is locked', async () => {
+  let job, est, token;
+  await as(db, u.rep1, async q => {
+    job = (await one(q, `insert into jobs (name, contact_id) values ('Sign test', $1) returning id`, [ids.contact])).id;
+    est = (await one(q, `insert into documents (kind, job_id, items, tax_rate) values ('estimate', $1, $2, 0) returning id`,
+      [job, JSON.stringify([{ desc: 'Shingles', qty: 10, unit: 'SQ', price: 300 }])])).id;
+    token = (await one(q, `select share_document($1) as t`, [est])).t;
+  });
+  assert.equal(token.length, 64);
+  assert.equal((await one(db, `select status from documents where id = $1`, [est])).status, 'sent');
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [job])).stage, 'estimate', 'sending the estimate moved the job');
+
+  // Signed-out customer: can read the shared document only through the token.
+  const doc = await asAnon(db, async q => {
+    assert.equal((await all(q, `select id from documents`)).length, 0, 'tables stay closed to the public');
+    assert.equal((await one(q, `select get_shared_document('nope') as d`)).d, null);
+    assert.equal((await one(q, `select get_shared_document($1) as d`, ['x'.repeat(64)])).d, null);
+    return (await one(q, `select get_shared_document($1) as d`, [token])).d;
+  });
+  assert.equal(doc.kind, 'estimate');
+  assert.equal(Number(doc.total), 3000);
+  assert.equal(doc.customer.first, 'Avery');
+  assert.equal(doc.company.company, 'Your Roofing Company');
+  assert.ok(!('share_token' in doc) && !('signed_ip' in doc), 'no internal fields leak');
+  assert.ok((await one(db, `select viewed_at from documents where id = $1`, [est])).viewed_at, 'first view recorded');
+  await db.query(`update documents set viewed_at = null where id = $1`, [est]);
+  await as(db, u.rep1, q => q.query(`select get_shared_document($1, false)`, [token]));
+  assert.equal((await one(db, `select viewed_at from documents where id = $1`, [est])).viewed_at, null, 'staff preview not counted');
+
+  await assert.rejects(asAnon(db, q => q.query(`select sign_document($1, 'A', null)`, [token])), /full name/);
+  await assert.rejects(asAnon(db, q => q.query(`select sign_document($1, 'Avery Thompson', 'javascript:alert(1)')`, [token])), /could not be read/);
+  await asAnon(db, q => q.query(`select sign_document($1, 'Avery Thompson', 'data:image/png;base64,iVBORw0KGgo=', '203.0.113.9')`, [token]));
+
+  const signed = await one(db, `select status, signed_name, signed_ip, signed_at from documents where id = $1`, [est]);
+  assert.equal(signed.status, 'accepted');
+  assert.equal(signed.signed_name, 'Avery Thompson');
+  assert.equal(signed.signed_ip, '203.0.113.9');
+  assert.equal((await one(db, `select stage from jobs where id = $1`, [job])).stage, 'sold');
+  assert.ok((await all(db, `select text from job_activity where job_id = $1`, [job])).some(a => /signed online by Avery Thompson/.test(a.text)));
+
+  await assert.rejects(asAnon(db, q => q.query(`select sign_document($1, 'Someone Else', null)`, [token])), /already been signed/);
+  await assert.rejects(
+    as(db, u.office, q => q.query(`update documents set items = '[]' where id = $1`, [est])),
+    /signed by the customer/,
+  );
+  // Notes can still be updated on a signed estimate.
+  await as(db, u.office, q => q.query(`update documents set notes = 'Install in spring' where id = $1`, [est]));
+});
+
+test('invoices can be shared for viewing but not signed', async () => {
+  let token;
+  await as(db, u.office, async q => {
+    token = (await one(q, `select share_document($1) as t`, [ids.invoice])).t;
+  });
+  const doc = await asAnon(db, async q => (await one(q, `select get_shared_document($1) as d`, [token])).d);
+  assert.equal(doc.kind, 'invoice');
+  assert.equal(Number(doc.paid), 12190.5);
+  await assert.rejects(asAnon(db, q => q.query(`select sign_document($1, 'Avery Thompson', null)`, [token])), /Only estimates/);
+  await assert.rejects(asAnon(db, q => q.query(`select share_document($1)`, [ids.invoice])), /permission denied/);
+});
+
 test('importer helper is not callable by signed-in users', async () => {
   await assert.rejects(as(db, u.owner, q => q.query(`select sync_number_sequences()`)), /permission denied/);
 });

@@ -12,6 +12,7 @@ import { StageBadge } from '@/lib/jobs';
 import { getPeople, personName } from '@/lib/staff';
 import { daysSince, fmtDateTime, fmtDay, fullAddress, fullName, mapHref, money, moneyCents, telHref, todayISO } from '@/lib/format';
 import { CLAIM_STATUSES, JOB_TYPES, ROOF_TYPES } from '@/lib/options';
+import { displayStatus, docLabel, STATUS_BADGE } from '@/lib/documents';
 import {
   addNote, addSupplement, changeStage, createWorkOrder, deleteJob, deleteWorkOrder, updateClaim, updateJob, updateSupplement,
 } from '../actions';
@@ -214,16 +215,23 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
       </section>
 
       <section className="panel" id="money">
-        <div className="panel-head"><h2>Estimates and invoices</h2></div>
-        {docs.length === 0 && <p className="muted">None yet. Building and sending estimates and invoices comes in the next phase.</p>}
+        <div className="panel-head">
+          <h2>Estimates and invoices</h2>
+          <div className="quick" style={{ margin: 0 }}>
+            <Link className="btn small primary" href={`/documents/new?job=${job.id}&kind=estimate`}><Icon name="plus" size={14} /> Estimate</Link>
+            <Link className="btn small" href={`/documents/new?job=${job.id}&kind=invoice`}><Icon name="plus" size={14} /> Invoice</Link>
+          </div>
+        </div>
+        {docs.length === 0 && <p className="muted">None yet.</p>}
         {docs.map(d => {
           const t = docTotals(d);
+          const shown = displayStatus(d, t.total, t.paid, today);
           return (
-            <div className="line-item" key={d.id}>
-              <span className="grow"><b>{d.kind === 'invoice' ? 'INV' : 'EST'}-{String(d.number).padStart(2, '0')}</b> <span className="badge">{d.status}</span>
+            <Link className="line-item" key={d.id} href={`/documents/${d.id}`}>
+              <span className="grow"><b>{docLabel(d)}</b> <span className={`badge ${STATUS_BADGE[shown] ?? ''}`}>{shown}</span>
                 <small>{fmtDay(d.date)}{d.kind === 'invoice' && t.paid > 0 ? ` · Paid ${moneyCents(t.paid)}` : ''}</small></span>
               <span className="num">{moneyCents(t.total)}{d.kind === 'invoice' && <small>Balance {moneyCents(t.balance)}</small>}</span>
-            </div>
+            </Link>
           );
         })}
       </section>
