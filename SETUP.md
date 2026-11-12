@@ -85,3 +85,26 @@ npm test
 ```
 
 This runs the permission and business-rule tests against a local copy of Postgres. It needs no Supabase account.
+
+## Working on another computer
+
+The code lives in the private GitHub repository `SolutionRoofing/roofing-crm`. Keys and passwords (`.env.local`) are never uploaded, so they have to be copied over yourself, ideally from a password manager.
+
+**First time on a new computer:**
+
+1. Install Node.js (LTS) and Git from their websites, or in PowerShell: `winget install OpenJS.NodeJS.LTS` and `winget install Git.Git`.
+2. Download the project:
+   ```bash
+   git clone https://github.com/SolutionRoofing/roofing-crm.git
+   cd roofing-crm
+   npm install
+   ```
+3. Create `.env.local` (start from `.env.example`) with the same values as on your main computer.
+4. Start it with `npm run dev`.
+
+Use a folder outside OneDrive (for example `C:\dev\roofing-crm`), so OneDrive doesn't sync the large library folder.
+
+**Every time you switch computers:**
+
+- Before you stop: `git add -A`, then `git commit -m "what changed"`, then `git push`.
+- When you start on the other computer: `git pull`.
