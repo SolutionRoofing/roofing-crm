@@ -31,7 +31,7 @@ The **first login created becomes the Owner**, so do this before inviting anyone
 
 - **Authentication → Sign In / Providers**: turn off **Allow new users to sign up**. Invites still work.
 - **Authentication → URL Configuration**:
-  - Site URL: `http://localhost:3000` for now. Change it to `https://crm.yourcompany.com` at launch.
+  - Site URL: `http://localhost:3000` for now. Change it to `https://app.solutionroof.com` at launch.
   - Redirect URLs: add the same address followed by `/**`.
 - The email templates can stay as Supabase ships them. The app accepts Supabase's standard invite and reset links (`/auth/accept` and `/auth/confirm`).
 - Supabase's built-in email sender only allows a few emails an hour. Before inviting all 9 people, connect Resend under **Authentication → Emails → SMTP Settings**. That's the same Resend account the follow-up emails will use.

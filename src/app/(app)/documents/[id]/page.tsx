@@ -53,7 +53,7 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
   const editable = !d.signed_at && d.status !== 'void' && !(d.kind === 'estimate' && ['accepted', 'declined'].includes(d.status));
 
   const h = await headers();
-  // SITE_URL (e.g. https://crm.yourcompany.com) wins once the app is hosted.
+  // SITE_URL (e.g. https://app.solutionroof.com) wins once the app is hosted.
   const origin = process.env.SITE_URL?.replace(/\/$/, '') || `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('x-forwarded-host') ?? h.get('host')}`;
   const shareUrl = d.share_token ? `${origin}/e/${d.share_token}` : null;
   const label = docLabel(d);
