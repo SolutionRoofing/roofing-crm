@@ -4,7 +4,7 @@ This walks through connecting the app to Supabase (its database, logins and phot
 
 ## 1. Create the Supabase project (you)
 
-1. Sign up at supabase.com. The free plan is enough to start; upgrade to Pro (about $25 a month) before the team relies on it, for daily backups.
+1. Sign up at supabase.com. The free plan is enough to start; upgrade to Pro (about $25 a month) before the team relies on it, for daily backups. See UPGRADES.md for every free-plan limit and when to upgrade.
 2. Create a new project. Pick a region near you, and save the database password in your password manager.
 3. Open **Project Settings → API Keys** and copy three values into a new file called `.env.local` in this folder (start from `.env.example`):
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -20,6 +20,9 @@ In Supabase, open the **SQL Editor**. Paste in and run each file from `supabase/
 3. `0003_storage.sql`: the private photo bucket
 4. `0004_defaults.sql`: starter email templates, follow-up rules and price list
 5. `0005_profile_guard.sql`: protects owner accounts
+6. The rest of the files in that folder, in number order (`0006` to `0010`)
+
+On a brand-new project you can run `supabase/setup-all.sql` once instead. It contains every file.
 
 ## 3. Make yourself the owner (you, right after step 2)
 

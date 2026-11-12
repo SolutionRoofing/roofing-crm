@@ -129,3 +129,11 @@
   #view { padding: 16px 16px 90px; }
   .table-wrap { overflow-x: auto; }
 }
+
+/* Settings > Plan usage */
+.usage-track { background: var(--neutral-bg); border-radius: 4px; overflow: hidden; }
+.usage-track .bar-fill { border-radius: 4px; }
+.usage-track .usage-hot { background: var(--bad); }
+.usage-warn { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; font-size: 13px; }
+.usage-bars .bar-row { grid-template-columns: 124px 1fr auto; }
+.usage-bars .bar-val { white-space: nowrap; }

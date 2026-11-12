@@ -1,0 +1,38 @@
+# Sends due follow-up emails by calling the app's /api/cron/send-emails.
+#
+# Why this exists: Vercel's free (Hobby) plan only allows a scheduled job once
+# a day. GitHub runs this one for free instead. Every 30 minutes uses about
+# 1,440 of the 2,000 free GitHub Actions minutes a month for a private repo.
+#
+# Needs one repository secret: CRON_SECRET (same value as in Vercel).
+# Optional repository variable: APP_URL (defaults to https://app.solutionroof.com).
+#
+# When you upgrade Vercel to Pro: set vercel.json's schedule to "*/10 * * * *"
+# and disable this workflow (GitHub > Actions > Send follow-up emails > ... > Disable).
+# See UPGRADES.md.
+name: Send follow-up emails
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call the app
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://app.solutionroof.com' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET is not set in the repository secrets yet; skipping."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/send-emails"

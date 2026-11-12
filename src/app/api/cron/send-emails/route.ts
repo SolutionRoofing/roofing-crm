@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { processOutbox } from '@/lib/email/send';
 
-// Called every 10 minutes by Vercel Cron (see vercel.json), which sends
+// Called every 30 minutes by GitHub Actions (.github/workflows/send-emails.yml)
+// and once a day by Vercel Cron (vercel.json, the Hobby plan limit). Both send
 // "Authorization: Bearer <CRON_SECRET>". Sends whatever is due in the outbox.
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;

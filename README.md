@@ -17,3 +17,5 @@ The shared version of the roofing CRM prototype. It runs on Next.js, uses Supaba
 | 4. Estimates, invoices, payments, customer e-signing | Done; tested on the live database |
 | 5. Automatic email sending (Resend) | The outbox and rules are in the database; the sender isn't built yet |
 | 6. Launch at `app.solutionroof.com` | — |
+
+Running on free plans: see [UPGRADES.md](UPGRADES.md) for the limits and when to upgrade. **Settings → Plan usage** in the app warns at 80%.

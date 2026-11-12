@@ -403,3 +403,12 @@ test('unsubscribe link: stops marketing, cancels queued marketing, keeps job fol
 test('importer helper is not callable by signed-in users', async () => {
   await assert.rejects(as(db, u.owner, q => q.query(`select sync_number_sequences()`)), /permission denied/);
 });
+
+test('plan usage numbers: admins only', async () => {
+  const usage = await as(db, u.office, q => one(q, `select public.plan_usage() as u`));
+  assert.ok(Number(usage.u.db_bytes) > 0);
+  assert.equal(typeof usage.u.emails_month, 'number');
+  await assert.rejects(as(db, u.rep1, q => q.query(`select public.plan_usage()`)), /not allowed/);
+  await assert.rejects(as(db, u.crewA, q => q.query(`select public.plan_usage()`)), /not allowed/);
+  await assert.rejects(asAnon(db, q => q.query(`select public.plan_usage()`)), /permission denied/);
+});

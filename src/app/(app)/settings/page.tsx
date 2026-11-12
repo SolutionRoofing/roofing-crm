@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { ConfirmButton, SubmitButton } from '@/components/client';
 import { isAdmin, requireUser, ROLE_LABELS } from '@/lib/auth';
+import { PLAN_LIMITS, WARN_AT } from '@/lib/plan-limits';
 import { createClient } from '@/lib/supabase/server';
 import { deleteCatalogItem, saveCatalogItem } from './actions';
 import { CompanyForm, ProfileForm } from './forms';
@@ -45,6 +46,11 @@ async function Settings() {
           </section>
         )}
       </div>
+      {admin && (
+        <Suspense fallback={null}>
+          <PlanUsage />
+        </Suspense>
+      )}
       {catalog && (
         <section className="panel" id="price-list" style={{ marginTop: 14 }}>
           <div className="panel-head"><h2>Price list</h2><span className="muted">Used when building estimates</span></div>
@@ -73,5 +79,50 @@ async function Settings() {
         </section>
       )}
     </>
+  );
+}
+
+type Usage = { db_bytes: number; storage_bytes: number; emails_today: number; emails_month: number };
+
+function mb(bytes: number) {
+  return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(2)} GB` : `${Math.round(bytes / 1024 ** 2)} MB`;
+}
+
+// Admins only: how close the free plans are to their limits (see UPGRADES.md).
+async function PlanUsage() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc('plan_usage');
+  if (!data) return null;
+  const u = data as Usage;
+  const rows = [
+    { label: 'Photo storage', used: u.storage_bytes, limit: PLAN_LIMITS.storageBytes, show: mb, fix: 'Supabase Pro' },
+    { label: 'Database', used: u.db_bytes, limit: PLAN_LIMITS.dbBytes, show: mb, fix: 'Supabase Pro' },
+    { label: 'Emails today', used: u.emails_today, limit: PLAN_LIMITS.emailsPerDay, show: String, fix: 'Resend Pro' },
+    { label: 'Emails this month', used: u.emails_month, limit: PLAN_LIMITS.emailsPerMonth, show: String, fix: 'Resend Pro' },
+  ];
+  const near = rows.filter(r => r.used / r.limit >= WARN_AT);
+  return (
+    <section className="panel" style={{ marginTop: 14 }}>
+      <div className="panel-head"><h2>Plan usage</h2><span className="muted">Free plans</span></div>
+      {near.length > 0 && (
+        <p className="usage-warn" role="alert">
+          Getting close to a free limit: {near.map(r => `${r.label} (upgrade: ${r.fix})`).join(', ')}. See UPGRADES.md.
+        </p>
+      )}
+      <div className="bars usage-bars">
+        {rows.map(r => {
+          const pct = Math.min(100, Math.round((r.used / r.limit) * 100));
+          return (
+            <div className="bar-row" key={r.label}>
+              <span className="bar-label">{r.label}</span>
+              <span className="bar-track usage-track" title={`${pct}%`}>
+                <span className={`bar-fill${r.used / r.limit >= WARN_AT ? ' usage-hot' : ''}`} style={{ width: `${Math.max(pct, 1)}%` }} />
+              </span>
+              <span className="bar-val">{r.show(r.used)} / {r.show(r.limit)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
