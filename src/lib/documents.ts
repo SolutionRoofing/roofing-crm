@@ -33,6 +33,8 @@ export type DocStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'void';
 export type CatalogItem = {
   id: string; name: string; description: string; unit: string; price: number;
   material_cost: number; labor_cost: number; markup: number; category: string;
+  /** Quantity formula, e.g. ceil((eaves + rakes) / 116). Empty = typed by hand. */
+  formula?: string;
 };
 /** One choice on the estimate (Good / Better / Best, Repair…). */
 export type EstOption = { name: string; items: Line[] };

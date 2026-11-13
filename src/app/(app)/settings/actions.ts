@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
 import { markupFor, priceFor } from '@/lib/documents';
 import { toPriceRows } from '@/lib/price-import';
+import { formulaError } from '@/lib/measure';
 import { createClient } from '@/lib/supabase/server';
 import { number, text } from '@/lib/form';
 import type { FormState } from '@/app/login/actions';
@@ -38,9 +39,12 @@ export async function saveCatalogItem(fd: FormData) {
     if (markupTyped) price = priceFor({ ...costs, markup }, matTax);
     else markup = markupFor(price, costs, matTax);
   }
+  const formula = text(fd, 'formula', 300);
+  const bad = formulaError(formula);
+  if (bad) throw new Error(`The quantity formula for "${name}" has a problem: ${bad}`);
   const row = {
     name, description: text(fd, 'description', 4000), unit: text(fd, 'unit', 12) || 'EA', category: text(fd, 'category', 60),
-    material_cost: costs.mat, labor_cost: costs.lab, markup, price,
+    material_cost: costs.mat, labor_cost: costs.lab, markup, price, formula,
   };
   const { error } = id
     ? await supabase.from('catalog_items').update(row).eq('id', id)

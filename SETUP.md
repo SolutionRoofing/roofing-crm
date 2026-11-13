@@ -20,7 +20,7 @@ In Supabase, open the **SQL Editor**. Paste in and run each file from `supabase/
 3. `0003_storage.sql`: the private photo bucket
 4. `0004_defaults.sql`: starter email templates, follow-up rules and price list
 5. `0005_profile_guard.sql`: protects owner accounts
-6. The rest of the files in that folder, in number order (`0006` to `0015`)
+6. The rest of the files in that folder, in number order (`0006` to `0016`)
 
 On a brand-new project you can run `supabase/setup-all.sql` once instead. It contains every file.
 

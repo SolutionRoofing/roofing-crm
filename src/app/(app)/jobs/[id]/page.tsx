@@ -1,3 +1,4 @@
+import { MeasurementsPanel } from '@/components/measurements-panel';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -169,6 +170,8 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
           </form>
         </section>
       </div>
+
+      <MeasurementsPanel key={`m-${job.updated_at}`} jobId={job.id} raw={job.measurements} />
 
       {job.type === 'Insurance' && <Claim key={job.updated_at} jobId={job.id} ins={ins} />}
 

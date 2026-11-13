@@ -21,7 +21,7 @@ export default function SettingsPage() {
   );
 }
 
-type Item = { id: string; name: string; description: string; unit: string; price: number; material_cost: number; labor_cost: number; markup: number; category: string };
+type Item = { id: string; name: string; description: string; unit: string; price: number; material_cost: number; labor_cost: number; markup: number; category: string; formula: string };
 type Template = { id: string; name: string; items: unknown[]; created_by: string | null };
 
 async function Settings() {
@@ -31,7 +31,7 @@ async function Settings() {
   const [{ data: profile }, { data: settings }, { data: catalog }, { data: templates }] = await Promise.all([
     supabase.from('profiles').select('full_name, phone, email').eq('id', me.id).single(),
     admin ? supabase.from('settings').select('*').eq('id', 1).single() : Promise.resolve({ data: null }),
-    admin ? supabase.from('catalog_items').select('id, name, description, unit, price, material_cost, labor_cost, markup, category').order('category').order('sort').order('name') : Promise.resolve({ data: null }),
+    admin ? supabase.from('catalog_items').select('id, name, description, unit, price, material_cost, labor_cost, markup, category, formula').order('category').order('sort').order('name') : Promise.resolve({ data: null }),
     me.role === 'crew' ? Promise.resolve({ data: null }) : supabase.from('estimate_templates').select('id, name, items, created_by').order('name'),
   ]);
 
@@ -64,6 +64,16 @@ async function Settings() {
           <details className="add-box" style={{ marginBottom: 12 }}>
             <summary className="btn small">Import from a CSV file</summary>
             <PriceImportForm />
+          </details>
+          <details className="formula-help">
+            <summary className="link-btn">How quantity formulas work</summary>
+            <p className="muted">
+              &quot;Fill quantities from measurements&quot; in an estimate uses these. Names you can use: <code>sq</code> (roof area in squares),{' '}
+              <code>waste</code> (0.14 for 14%), <code>low_sq</code>, <code>steep_sq</code>, <code>eaves</code>, <code>rakes</code>, <code>ridges</code>,{' '}
+              <code>hips</code>, <code>valleys</code>, <code>step</code>, <code>wall</code> (all in feet), <code>pipes</code>, <code>layers</code>, and labor bands{' '}
+              <code>p_low</code>, <code>p_4_6</code>, <code>p_7_9</code>, <code>p_10_12</code> (squares). Math: + − × ÷ ( ) and <code>ceil</code>, <code>round</code>,{' '}
+              <code>min</code>, <code>max</code>. Leave it empty for items the rep counts by hand.
+            </p>
           </details>
           <div className="cat-head" aria-hidden="true">
             <span>Item name</span><span>Category</span><span>UoM</span><span>Material</span><span>Labor</span><span>Markup %</span><span>Price</span><span />
@@ -161,6 +171,7 @@ function CatalogForm({ c }: { c?: Item }) {
       <input name="price" defaultValue={c ? Number(c.price).toFixed(2) : ''} placeholder="0.00" inputMode="decimal" aria-label={`Price for ${n}`} />
       <SubmitButton className={`btn small${c ? '' : ' primary'}`} pendingText="…">{c ? 'Save' : 'Add'}</SubmitButton>
       <textarea name="description" defaultValue={c?.description} rows={1} placeholder="Description shown on the estimate (optional)" aria-label={`Description for ${n}`} className="cat-desc" />
+      <input name="formula" defaultValue={c?.formula} placeholder="Quantity formula, e.g. ceil((eaves + rakes) / 116)" aria-label={`Quantity formula for ${n}`} className="cat-formula" spellCheck={false} />
     </form>
   );
 }

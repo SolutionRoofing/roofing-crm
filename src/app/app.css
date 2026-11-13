@@ -332,3 +332,13 @@
 .choose-upgrade input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--green); }
 .choose-upgrade small { display: block; }
 .choose-upgrade.on b { color: var(--green); }
+
+/* Job measurements */
+.measure-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; margin-top: 12px; }
+.measure-form .field { margin: 0; }
+.measure-form input, .measure-form select { width: 100%; }
+.measure-actions { grid-column: 1 / -1; }
+.cat-form .cat-formula { grid-column: 1 / -2; font: 12.5px var(--font-mono); color: var(--green); background: var(--surface-2); }
+.formula-help { margin-bottom: 10px; }
+.formula-help p { margin-top: 6px; font-size: 13px; }
+.formula-help code { font: 12px var(--font-mono); background: var(--mint); padding: 0 4px; border-radius: 3px; color: var(--green); }

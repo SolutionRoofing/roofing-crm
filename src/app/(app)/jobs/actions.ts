@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { checked, isoDate, number, oneOf, text, uuid } from '@/lib/form';
 import { CLAIM_STATUSES, LEAD_SOURCES, SERVICES } from '@/lib/options';
 import { STAGES } from '@/lib/stages';
+import { cleanMeasurements, MEASURE_FIELDS } from '@/lib/measure';
 import type { FormState } from '@/app/login/actions';
 
 const STAFF = ['owner', 'office', 'rep'] as const;
@@ -205,4 +206,24 @@ export async function deleteJob(fd: FormData) {
   if (!count) throw new Error('That job could not be deleted.');
   refreshJob();
   redirect('/jobs');
+}
+
+/** Roof measurements from the report (GAF QuickMeasure, HOVER, Roofr…) used to size estimates. */
+export async function saveMeasurements(fd: FormData) {
+  await requireUser([...STAFF]);
+  const id = uuid(fd, 'id');
+  if (!id) return;
+  const raw: Record<string, unknown> = {};
+  for (const f of MEASURE_FIELDS) raw[f.key] = String(fd.get(f.key) ?? '').replace(/[,\s]/g, '');
+  raw.source = text(fd, 'source', 60);
+  const m = cleanMeasurements(raw);
+  const supabase = await createClient();
+  // Keep the job's squares and pitch in step so older screens show the same numbers.
+  fail((await supabase.from('jobs').update({
+    measurements: m,
+    ...(m.area_sqft > 0 ? { squares: Math.round(m.area_sqft) / 100 } : {}),
+    ...(m.pitch > 0 ? { pitch: `${m.pitch}/12` } : {}),
+  }).eq('id', id)).error);
+  await supabase.from('job_activity').insert({ job_id: id, kind: 'system', text: `Measurements saved${m.source ? ` (${m.source})` : ''}: ${Math.round(m.area_sqft)} sq ft` });
+  refreshJob(id);
 }

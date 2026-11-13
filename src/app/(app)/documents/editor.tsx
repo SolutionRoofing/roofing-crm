@@ -8,6 +8,7 @@ import {
   type CatalogItem, type EstimateTemplate, type EstOption, type ItemLine, type Line, type SectionLine, type Selection, type Upgrade,
 } from '@/lib/documents';
 import { moneyCents } from '@/lib/format';
+import { hasMeasurements, quantityFor, type Measurements } from '@/lib/measure';
 import { saveDocument, saveEstimateTemplate } from './actions';
 
 type Initial = {
@@ -32,8 +33,9 @@ const DEFAULT_NAMES = ['Good', 'Better', 'Best', 'Repair', 'Option 5', 'Option 6
  * material/labor cost, markup, price, amount), sections, item search from the price list, and a
  * cost / profit / margin summary the customer never sees.
  */
-export function DocEditor({ initial, catalog, templates, canSaveProducts, cancelHref }: {
+export function DocEditor({ initial, catalog, templates, canSaveProducts, cancelHref, measurements = null }: {
   initial: Initial; catalog: CatalogItem[]; templates: EstimateTemplate[]; canSaveProducts: boolean; cancelHref: string;
+  measurements?: Measurements | null;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveDocument, {});
   // Options (Good / Better / Best, Repair…). One option = a plain estimate with no choices for the customer.
@@ -98,6 +100,27 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
     if (!multi || !window.confirm('Remove the "' + cur.name + '" option and its lines?')) return;
     setOpts(os => os.filter(o => o.k !== cur.k));
     setActive(0);
+  };
+  // Size every line that has a price-list formula, in every option, from the job's measurements.
+  const [fillMsg, setFillMsg] = useState('');
+  const fillFromMeasurements = () => {
+    if (!measurements) return;
+    const byId = new Map(catalog.map(c => [c.id, c]));
+    const byName = new Map(catalog.map(c => [c.name.trim().toLowerCase(), c]));
+    let changed = 0;
+    const next = opts.map(o => ({
+      ...o,
+      rows: o.rows.map(r => {
+        if (!isItem(r.l)) return r;
+        const c = (r.l.pid && byId.get(r.l.pid)) || byName.get(r.l.name.trim().toLowerCase());
+        const q = quantityFor(c?.formula, measurements);
+        if (q === null || q === r.l.qty) return r;
+        changed++;
+        return { ...r, l: { ...r.l, qty: q } };
+      }),
+    }));
+    setOpts(next);
+    setFillMsg(changed ? `Filled ${changed} line${changed === 1 ? '' : 's'} from the measurements. Check them before saving.` : 'Quantities already match the measurements.');
   };
   const makeFirst = () => { setOpts(os => [cur, ...os.filter(o => o.k !== cur.k)]); setActive(0); };
   const optionsPayload = multi ? opts.map((o, i) => ({ name: o.name, items: optionLines[i] })) : [];
@@ -191,6 +214,11 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
       <div className="est-add">
         <button type="button" className="btn small" onClick={() => add(blankItem())}>+ Add item</button>
         <button type="button" className="btn small" onClick={() => add(blankSection())}>+ Add section</button>
+        {hasMeasurements(measurements) && (
+          <button type="button" className="btn small cta" onClick={fillFromMeasurements}>Fill quantities from measurements</button>
+        )}
+        {!hasMeasurements(measurements) && !isInvoice && <small className="muted">Add measurements on the job to fill quantities automatically.</small>}
+        {fillMsg && <small className="good-text" role="status">{fillMsg}</small>}
       </div>
 
       <div className="est-bottom">

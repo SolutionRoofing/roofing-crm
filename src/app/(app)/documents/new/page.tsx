@@ -9,6 +9,7 @@ import { isUuid } from '@/lib/form';
 import { addDaysISO, todayISO } from '@/lib/format';
 import { cleanSelections, cleanUpgrades, normalizeLines, normalizeOptions, type CatalogItem, type EstimateTemplate } from '@/lib/documents';
 import { DocEditor } from '../editor';
+import { cleanMeasurements } from '@/lib/measure';
 
 export const metadata: Metadata = { title: 'New estimate' };
 
@@ -28,8 +29,8 @@ async function New({ searchParams }: { searchParams: PageProps<'/documents/new'>
   if (!jobId) notFound();
   const supabase = await createClient();
   const [{ data: job }, { data: catalog }, { data: settings }, { data: templates }] = await Promise.all([
-    supabase.from('jobs').select('id, number, name').eq('id', jobId).maybeSingle(),
-    supabase.from('catalog_items').select('id, name, description, unit, price, material_cost, labor_cost, markup, category').order('sort').order('name'),
+    supabase.from('jobs').select('id, number, name, measurements').eq('id', jobId).maybeSingle(),
+    supabase.from('catalog_items').select('id, name, description, unit, price, material_cost, labor_cost, markup, category, formula').order('sort').order('name'),
     supabase.from('settings').select('tax_rate, material_tax_rate').maybeSingle(),
     kind === 'estimate' ? supabase.from('estimate_templates').select('id, name, items, notes, options, upgrades, selections').order('name') : Promise.resolve({ data: [] }),
   ]);
@@ -46,6 +47,7 @@ async function New({ searchParams }: { searchParams: PageProps<'/documents/new'>
         }))}
         canSaveProducts={isAdmin(me)}
         cancelHref={`/jobs/${job.id}#money`}
+        measurements={cleanMeasurements(job.measurements)}
         initial={{
           kind, job_id: job.id, items: [], tax_rate: Number(settings?.tax_rate) || 0, material_tax_rate: Number(settings?.material_tax_rate) || 0,
           notes: '', internal_notes: '', options: [], upgrades: [], selections: [], date: today, due_date: kind === 'invoice' ? addDaysISO(today, 14) : null,
