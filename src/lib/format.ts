@@ -23,8 +23,8 @@ export function fmtTime(t: string | null | undefined) {
 export const daysSince = (ts: string | null | undefined) =>
   ts ? Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 86400000)) : 0;
 
-/** Today's date as YYYY-MM-DD in the business's local time (America/Chicago by default). */
-export function todayISO(tz = process.env.BUSINESS_TIMEZONE || 'America/Chicago') {
+/** Today's date as YYYY-MM-DD in the business's local time (America/New_York by default — Cincinnati). */
+export function todayISO(tz = process.env.BUSINESS_TIMEZONE || 'America/New_York') {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 

@@ -50,3 +50,12 @@ export async function deleteEvent(fd: FormData) {
   if (error) throw new Error(error.message);
   refresh(uuid(fd, 'job_id'));
 }
+
+/** New secret for my calendar link; the old link stops working (e.g. a phone was lost). */
+export async function resetCalendarLink() {
+  await requireUser([...STAFF]);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('reset_calendar_token');
+  if (error) throw new Error(error.message);
+  revalidatePath('/calendar');
+}
