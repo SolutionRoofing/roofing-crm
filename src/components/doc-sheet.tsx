@@ -1,5 +1,5 @@
 // The printable estimate / invoice. Used on the staff document page and the customer link.
-import { docLabel, docTotals, type Line } from '@/lib/documents';
+import { docLabel, docTotals, isSection, lineAmount, normalizeLines, type ItemLine, type Line, type SectionLine } from '@/lib/documents';
 import { fmtDay, fullAddress, fullName, moneyCents } from '@/lib/format';
 import { Logo } from './logo';
 
@@ -21,7 +21,8 @@ export type SheetData = {
 };
 
 export function DocSheet({ d, signature }: { d: SheetData; signature?: string | null }) {
-  const t = docTotals(d.items, d.tax_rate, d.paid);
+  const items = normalizeLines(d.items);
+  const t = docTotals(items, d.tax_rate, d.paid);
   const isInvoice = d.kind === 'invoice';
   return (
     <article className="sheet">
@@ -49,18 +50,10 @@ export function DocSheet({ d, signature }: { d: SheetData; signature?: string | 
       </div>
       <div className="table-wrap">
         <table className="sheet-table">
-          <thead><tr><th>Description</th><th className="r">Qty</th><th>Unit</th><th className="r">Price</th><th className="r">Amount</th></tr></thead>
+          <thead><tr><th>Item</th><th>Description</th><th className="r">Qty</th><th className="r">Price</th><th className="r">Amount</th></tr></thead>
           <tbody>
-            {d.items.map((l, i) => (
-              <tr key={i}>
-                <td>{l.desc}</td>
-                <td className="r">{l.qty}</td>
-                <td>{l.unit}</td>
-                <td className="r">{moneyCents(l.price)}</td>
-                <td className="r">{moneyCents((Number(l.qty) || 0) * (Number(l.price) || 0))}</td>
-              </tr>
-            ))}
-            {d.items.length === 0 && <tr><td colSpan={5} className="muted">No line items yet.</td></tr>}
+            {groupLines(items).map((g, gi) => <Group key={gi} g={g} />)}
+            {!items.some(l => !isSection(l)) && <tr><td colSpan={5} className="muted">No line items yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -87,5 +80,47 @@ export function DocSheet({ d, signature }: { d: SheetData; signature?: string | 
         )
       )}
     </article>
+  );
+}
+
+type LineGroup = { section: SectionLine | null; items: ItemLine[] };
+
+/** Lines before the first section form their own group; each section owns the lines after it. */
+function groupLines(lines: Line[]): LineGroup[] {
+  const groups: LineGroup[] = [{ section: null, items: [] }];
+  for (const l of lines) {
+    if (isSection(l)) groups.push({ section: l, items: [] });
+    else groups[groups.length - 1].items.push(l);
+  }
+  return groups.filter(g => g.section || g.items.length);
+}
+
+const qtyText = (l: ItemLine) => `${Number(l.qty)}${l.unit ? ` ${l.unit}` : ''}`;
+
+function Group({ g }: { g: LineGroup }) {
+  const display = g.section?.display ?? 'items';
+  const total = g.items.reduce((s, l) => s + lineAmount(l), 0);
+  const showTotal = !!g.section && (display === 'total' || g.section.show_total);
+  return (
+    <>
+      {g.section && (
+        <tr className="sheet-section">
+          <td colSpan={display === 'total' ? 4 : 5}>{g.section.title || 'Section'}</td>
+          {display === 'total' && <td className="r">{moneyCents(total)}</td>}
+        </tr>
+      )}
+      {display !== 'total' && g.items.map((l, i) => (
+        <tr key={i}>
+          <td className="sheet-item">{l.name}</td>
+          <td className="sheet-desc">{l.desc}</td>
+          <td className="r">{qtyText(l)}</td>
+          <td className="r">{display === 'items' ? moneyCents(l.price) : ''}</td>
+          <td className="r">{display === 'items' ? moneyCents(lineAmount(l)) : ''}</td>
+        </tr>
+      ))}
+      {showTotal && display !== 'total' && (
+        <tr className="sheet-section-total"><td colSpan={4}>{g.section!.title || 'Section'} total</td><td className="r">{moneyCents(total)}</td></tr>
+      )}
+    </>
   );
 }

@@ -9,9 +9,9 @@ import { DocSheet, type SheetData } from '@/components/doc-sheet';
 import { isAdmin, requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { isUuid } from '@/lib/form';
-import { displayStatus, docLabel, docTotals, STATUS_BADGE, type Line } from '@/lib/documents';
+import { costTotals, displayStatus, docLabel, docTotals, normalizeLines, STATUS_BADGE } from '@/lib/documents';
 import { fmtDateTime, fmtDay, fullName, moneyCents, todayISO } from '@/lib/format';
-import { convertToInvoice, deleteDocument, deletePayment, setDocumentStatus, shareDocument } from '../actions';
+import { convertToInvoice, deleteDocument, deletePayment, duplicateDocument, setDocumentStatus, shareDocument } from '../actions';
 import { CopyLink, EmailDocButton, PaymentForm, PrintButton } from '../doc-client';
 import { emailConfigured } from '@/lib/email/send';
 
@@ -45,8 +45,9 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
 
   const payments = ((d.payments ?? []) as Payment[]).sort((a, b) => a.date.localeCompare(b.date));
   const paid = payments.reduce((s, p) => s + Number(p.amount), 0);
-  const items = d.items as Line[];
+  const items = normalizeLines(d.items);
   const t = docTotals(items, Number(d.tax_rate), paid);
+  const costs = costTotals(items, Number(d.material_tax_rate));
   const today = todayISO();
   const status = displayStatus(d, t.total, paid, today);
   const isInvoice = d.kind === 'invoice';
@@ -80,7 +81,8 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
             <p className="muted" style={{ marginTop: 4 }}>{fullName(contact)} · {moneyCents(t.total)}{isInvoice && paid > 0 ? ` · ${moneyCents(t.balance)} due` : ''}</p>
           </div>
           <div className="quick" style={{ margin: 0 }}>
-            {editable && <Link className="btn" href={`/documents/${id}/edit`}>Edit</Link>}
+            {editable && <Link className="btn primary" href={`/documents/${id}/edit`}>Edit</Link>}
+            <form action={duplicateDocument}><input type="hidden" name="id" value={id} /><SubmitButton className="btn" pendingText="Copying…">Duplicate</SubmitButton></form>
             <PrintButton />
           </div>
         </div>
@@ -90,6 +92,30 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
         <DocSheet d={sheet} signature={d.signature} />
 
         <aside className="no-print">
+          {costs.cost > 0 && (
+            <section className="panel est-info">
+              <div className="panel-head"><h2>Cost &amp; profit</h2><span className="muted">Staff only</span></div>
+              <table className="sheet-table">
+                <tbody>
+                  <tr><td>Material cost</td><td className="r">{moneyCents(costs.material)}</td></tr>
+                  <tr><td>Material tax ({Number(d.material_tax_rate)}%)</td><td className="r">{moneyCents(costs.materialTax)}</td></tr>
+                  <tr><td>Labor cost</td><td className="r">{moneyCents(costs.labor)}</td></tr>
+                  <tr><td><b>Total cost</b></td><td className="r"><b>{moneyCents(costs.cost)}</b></td></tr>
+                  <tr><td>Markup</td><td className="r">{costs.markup}%</td></tr>
+                </tbody>
+              </table>
+              <div className={`est-profit${costs.profit < 0 ? ' bad' : ''}`}>
+                <div><span className="eyebrow">Total profit</span><b>{moneyCents(costs.profit)}</b></div>
+                <div><span className="eyebrow">Profit margin</span><b>{costs.margin}%</b></div>
+              </div>
+            </section>
+          )}
+          {d.internal_notes && (
+            <section className="panel">
+              <div className="panel-head"><h2>Internal note</h2><span className="muted">Staff only</span></div>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{d.internal_notes}</p>
+            </section>
+          )}
           <section className="panel">
             <div className="panel-head"><h2>Send to the customer</h2></div>
             {canEmail && contact?.email && d.status !== 'void' && <EmailDocButton documentId={id} to={contact.email} />}

@@ -297,8 +297,12 @@ test('share link and e-sign: customer signs, job moves to Sold, signed estimate 
   let job, est, token;
   await as(db, u.rep1, async q => {
     job = (await one(q, `insert into jobs (name, contact_id) values ('Sign test', $1) returning id`, [ids.contact])).id;
-    est = (await one(q, `insert into documents (kind, job_id, items, tax_rate) values ('estimate', $1, $2, 0) returning id`,
-      [job, JSON.stringify([{ desc: 'Shingles', qty: 10, unit: 'SQ', price: 300 }])])).id;
+    est = (await one(q, `insert into documents (kind, job_id, items, tax_rate, material_tax_rate, internal_notes)
+      values ('estimate', $1, $2, 0, 7.8, 'Supplier quote 4471') returning id`,
+      [job, JSON.stringify([
+        { type: 'section', title: 'Roofing', display: 'items', show_total: true },
+        { name: 'Shingles', desc: 'Architectural, installed', qty: 10, unit: 'SQ', mat: 120, lab: 60, markup: 52.5, price: 300 },
+      ])])).id;
     token = (await one(q, `select share_document($1) as t`, [est])).t;
   });
   assert.equal(token.length, 64);
@@ -317,6 +321,11 @@ test('share link and e-sign: customer signs, job moves to Sold, signed estimate 
   assert.equal(doc.customer.first, 'Avery');
   assert.equal(doc.company.company, 'Your Roofing Company');
   assert.ok(!('share_token' in doc) && !('signed_ip' in doc), 'no internal fields leak');
+  assert.ok(!('internal_notes' in doc) && !('material_tax_rate' in doc), 'internal note and material tax stay private');
+  assert.deepEqual(doc.items, [
+    { type: 'section', title: 'Roofing', display: 'items', show_total: true },
+    { name: 'Shingles', desc: 'Architectural, installed', qty: 10, unit: 'SQ', price: 300 },
+  ], 'customers get no costs or markup');
   assert.ok((await one(db, `select viewed_at from documents where id = $1`, [est])).viewed_at, 'first view recorded');
   await db.query(`update documents set viewed_at = null where id = $1`, [est]);
   await as(db, u.rep1, q => q.query(`select get_shared_document($1, false)`, [token]));
@@ -448,4 +457,24 @@ test('photo links: staff pick photos, customers see only those, links can be tur
 
   await as(db, u.rep1, q => q.query(`update photo_shares set revoked_at = now() where token = $1`, [token]));
   assert.equal(await asAnon(db, async q => (await one(q, `select get_shared_photos($1) as s`, [token])).s), null);
+});
+
+test('estimate templates: staff share them, crews cannot see them; work orders list item names', async () => {
+  await as(db, u.rep1, q => q.query(`insert into estimate_templates (name, items) values ('Full replacement', $1)`,
+    [JSON.stringify([{ type: 'section', title: 'Roofing' }, { name: 'Tear-off', desc: 'Remove all layers', qty: 1, unit: 'SQ', price: 65 }])]));
+  assert.equal((await as(db, u.office, q => all(q, `select id from estimate_templates`))).length, 1);
+  assert.equal((await as(db, u.crewA, q => all(q, `select id from estimate_templates`))).length, 0, 'crews see no templates');
+  await assert.rejects(as(db, u.crewA, q => q.query(`insert into estimate_templates (name) values ('x')`)), /row-level security/);
+
+  let wo;
+  await as(db, u.office, async q => {
+    const job = (await one(q, `insert into jobs (name, contact_id) values ('WO names', $1) returning id`, [ids.contact])).id;
+    await q.query(`insert into documents (kind, job_id, items) values ('estimate', $1, $2)`, [job, JSON.stringify([
+      { type: 'section', title: 'Roofing' },
+      { name: 'Ridge vent', desc: 'Long customer-facing text', qty: 40, unit: 'LF', mat: 3, lab: 1, markup: 50, price: 6 },
+    ])]);
+    wo = (await one(q, `select create_work_order($1, $2) as id`, [job, ids.crewA])).id;
+  });
+  const scope = (await one(db, `select scope from work_orders where id = $1`, [wo])).scope;
+  assert.deepEqual(scope, [{ desc: 'Ridge vent', qty: 40, unit: 'LF' }]);
 });

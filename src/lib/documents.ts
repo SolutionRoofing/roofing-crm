@@ -1,18 +1,133 @@
 // Estimates and invoices: types and math shared by the editor, the document page,
-// the customer page and the Money page. Mirrors private.document_total in the database.
+// the customer page and the Money page. The customer total mirrors private.document_total.
+//
+// Lines work like JobNimbus: an item has a name, a long description, unit, quantity, a material
+// cost and a labor cost per unit, a markup and a price. Price = unit cost × (1 + markup%).
+// Unit cost counts the sales tax the company pays on materials, so markup and margin are real.
 
-export type Line = { desc: string; qty: number; unit: string; price: number };
+export type ItemLine = {
+  type?: 'item';
+  name: string;
+  desc: string;
+  unit: string;
+  qty: number;
+  /** Material cost per unit, before the tax the company pays on it. */
+  mat: number;
+  /** Labor cost per unit. */
+  lab: number;
+  /** Markup % on unit cost. */
+  markup: number;
+  /** Price per unit the customer sees. */
+  price: number;
+  /** Price list item this line came from. */
+  pid?: string;
+  /** Editor only: add this line to the price list when the estimate is saved. */
+  save?: boolean;
+};
+export type SectionDisplay = 'items' | 'no_prices' | 'total';
+export type SectionLine = { type: 'section'; title: string; display: SectionDisplay; show_total: boolean };
+export type Line = ItemLine | SectionLine;
+
 export type DocKind = 'estimate' | 'invoice';
 export type DocStatus = 'draft' | 'sent' | 'accepted' | 'declined' | 'void';
-export type CatalogItem = { id: string; description: string; unit: string; price: number };
+export type CatalogItem = {
+  id: string; name: string; description: string; unit: string; price: number;
+  material_cost: number; labor_cost: number; markup: number; category: string;
+};
+export type EstimateTemplate = { id: string; name: string; items: Line[]; notes: string };
+
+export const SECTION_DISPLAYS: { value: SectionDisplay; label: string }[] = [
+  { value: 'items', label: 'Show line items' },
+  { value: 'no_prices', label: 'Show items, hide prices' },
+  { value: 'total', label: 'Show section total only' },
+];
 
 export const cents = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+const num = (n: unknown) => (Number.isFinite(Number(n)) ? Number(n) : 0);
 
+export const isSection = (l: Line): l is SectionLine => l.type === 'section';
+export const isItem = (l: Line): l is ItemLine => l.type !== 'section';
+
+/** Older lines only had { desc, qty, unit, price }: the short text was the item name. */
+export function normalizeLine(raw: unknown): Line {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  if (r.type === 'section') {
+    const display = SECTION_DISPLAYS.some(d => d.value === r.display) ? (r.display as SectionDisplay) : 'items';
+    return { type: 'section', title: String(r.title ?? ''), display, show_total: r.show_total !== false };
+  }
+  const hasName = typeof r.name === 'string';
+  return {
+    name: String(hasName ? r.name : r.desc ?? ''),
+    desc: hasName ? String(r.desc ?? '') : '',
+    unit: String(r.unit ?? ''),
+    qty: num(r.qty), mat: num(r.mat), lab: num(r.lab), markup: num(r.markup), price: num(r.price),
+    ...(typeof r.pid === 'string' ? { pid: r.pid } : {}),
+  };
+}
+export const normalizeLines = (raw: unknown): Line[] => (Array.isArray(raw) ? raw.map(normalizeLine) : []);
+
+/** Cost of one unit: material plus the tax paid on it, plus labor. */
+export const unitCost = (l: Pick<ItemLine, 'mat' | 'lab'>, materialTax: number) =>
+  num(l.mat) * (1 + num(materialTax) / 100) + num(l.lab);
+
+/** Price per unit from cost and markup. */
+export const priceFor = (l: Pick<ItemLine, 'mat' | 'lab' | 'markup'>, materialTax: number) =>
+  cents(unitCost(l, materialTax) * (1 + num(l.markup) / 100));
+
+/** Markup % that a typed-in price implies (0 when the line has no cost). */
+export function markupFor(price: number, l: Pick<ItemLine, 'mat' | 'lab'>, materialTax: number) {
+  const cost = unitCost(l, materialTax);
+  return cost > 0 ? Math.round((num(price) / cost - 1) * 10000) / 100 : 0;
+}
+
+export const lineAmount = (l: Line) => (isItem(l) ? cents(num(l.qty) * num(l.price)) : 0);
+
+/** What the customer pays. Sections carry no money. */
 export function docTotals(items: Line[], taxRate: number, paid = 0) {
-  const subtotal = cents(items.reduce((s, l) => s + cents((Number(l.qty) || 0) * (Number(l.price) || 0)), 0));
-  const tax = cents(subtotal * (Number(taxRate) || 0) / 100);
+  const subtotal = cents(items.reduce((s, l) => s + lineAmount(l), 0));
+  const tax = cents(subtotal * num(taxRate) / 100);
   const total = cents(subtotal + tax);
   return { subtotal, tax, total, paid: cents(paid), balance: cents(total - paid) };
+}
+
+/** Staff-only numbers: what the job costs and what it makes. Profit is figured before customer sales tax. */
+export function costTotals(items: Line[], materialTax: number) {
+  let material = 0, labor = 0, subtotal = 0;
+  for (const l of items) {
+    if (!isItem(l)) continue;
+    material += num(l.qty) * num(l.mat);
+    labor += num(l.qty) * num(l.lab);
+    subtotal += lineAmount(l);
+  }
+  material = cents(material);
+  labor = cents(labor);
+  subtotal = cents(subtotal);
+  const materialTaxAmt = cents(material * num(materialTax) / 100);
+  const cost = cents(material + materialTaxAmt + labor);
+  const profit = cents(subtotal - cost);
+  return {
+    material, materialTax: materialTaxAmt, labor, cost, subtotal, profit,
+    margin: subtotal > 0 ? Math.round(profit / subtotal * 1000) / 10 : 0,
+    markup: cost > 0 ? Math.round(profit / cost * 1000) / 10 : 0,
+  };
+}
+
+/** Re-price every line that has a cost so the estimate lands on a target profit margin %. */
+export function applyMargin(items: Line[], marginPct: number, materialTax: number): Line[] {
+  const m = Math.min(95, Math.max(0, num(marginPct))) / 100;
+  const markup = Math.round((1 / (1 - m) - 1) * 10000) / 100;
+  return items.map(l => (isItem(l) && unitCost(l, materialTax) > 0 ? { ...l, markup, price: priceFor({ ...l, markup }, materialTax) } : l));
+}
+
+/** Sum of the item lines under each section (keyed by the section's index). */
+export function sectionTotals(items: Line[]) {
+  const totals = new Map<number, number>();
+  let current = -1;
+  items.forEach((l, i) => {
+    if (isSection(l)) { current = i; totals.set(i, 0); }
+    else if (current >= 0) totals.set(current, cents((totals.get(current) ?? 0) + lineAmount(l)));
+  });
+  return totals;
 }
 
 export const docLabel = (d: { kind: string; number: number }) =>
@@ -33,33 +148,31 @@ export const STATUS_BADGE: Record<string, string> = {
 
 export const PAYMENT_METHODS = ['Check', 'Insurance check', 'Card', 'ACH / bank transfer', 'Cash', 'Financing', 'Other'] as const;
 
-/** The prototype's "Fill standard roof": common lines sized from the job's squares. */
-export function standardLines(squares: number, catalog: CatalogItem[]): Line[] {
-  const sq = Number(squares) || 0;
-  const plan: [string, number][] = [
-    ['Tear-off', sq], ['Architectural', sq], ['Synthetic', sq],
-    ['Drip edge', Math.round(sq * 6)], ['Ridge vent', Math.round(sq * 1.5)], ['Dumpster', 1],
-  ];
-  return plan.flatMap(([prefix, qty]) => {
-    const c = catalog.find(x => x.description.startsWith(prefix));
-    return c ? [{ desc: c.description, qty, unit: c.unit, price: Number(c.price) }] : [];
-  });
-}
+const clip = (v: unknown, n: number) => String(v ?? '').trim().slice(0, n);
+const round3 = (n: number) => Math.round(n * 1000) / 1000;
+const money = (v: unknown, max = 10_000_000) => Math.min(max, Math.max(-max, cents(num(v))));
 
-/** Clean up lines coming from a form: drop blanks, coerce numbers, cap sizes. */
+/** Clean up lines coming from a form: drop empty lines, coerce numbers, cap sizes. */
 export function cleanLines(raw: unknown): Line[] {
   if (!Array.isArray(raw)) return [];
-  return raw.slice(0, 200).flatMap(r => {
-    const l = r as Partial<Line>;
-    const desc = String(l.desc ?? '').trim().slice(0, 300);
-    if (!desc) return [];
-    const qty = Number(l.qty);
-    const price = Number(l.price);
+  return raw.slice(0, 300).flatMap((r): Line[] => {
+    const l = (r ?? {}) as Record<string, unknown>;
+    if (l.type === 'section') {
+      const s = normalizeLine(l) as SectionLine;
+      return [{ ...s, title: clip(s.title, 120) }];
+    }
+    const name = clip(l.name ?? l.desc, 200);
+    const desc = l.name !== undefined ? clip(l.desc, 4000) : '';
+    if (!name && !desc) return [];
     return [{
-      desc,
-      qty: Number.isFinite(qty) ? Math.round(qty * 1000) / 1000 : 0,
-      unit: String(l.unit ?? '').trim().slice(0, 10),
-      price: Number.isFinite(price) ? cents(price) : 0,
+      name: name || 'Item', desc,
+      unit: clip(l.unit, 12),
+      qty: round3(Math.min(1_000_000, Math.max(-1_000_000, num(l.qty)))),
+      mat: money(l.mat), lab: money(l.lab),
+      markup: Math.round(Math.min(10_000, Math.max(-100, num(l.markup))) * 100) / 100,
+      price: money(l.price),
+      ...(typeof l.pid === 'string' && /^[0-9a-f-]{36}$/i.test(l.pid) ? { pid: l.pid } : {}),
+      ...(l.save === true ? { save: true } : {}),
     }];
   });
 }

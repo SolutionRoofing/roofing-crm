@@ -23,7 +23,7 @@ export function ProfileForm({ fullName, phone, email }: { fullName: string; phon
   );
 }
 
-type Company = { company: string; phone: string; email: string; address: string; license: string; tax_rate: number; review_url: string; terms: string };
+type Company = { company: string; phone: string; email: string; address: string; license: string; tax_rate: number; material_tax_rate: number; review_url: string; terms: string };
 
 export function CompanyForm({ s }: { s: Company }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveCompany, {});
@@ -38,7 +38,14 @@ export function CompanyForm({ s }: { s: Company }) {
         <small>Required by law (CAN-SPAM) at the bottom of marketing emails.</small>
       </div>
       <div className="field"><label htmlFor="co-license">License #</label><input id="co-license" name="license" defaultValue={s.license} /></div>
-      <div className="field"><label htmlFor="co-tax">Sales tax %</label><input id="co-tax" name="tax_rate" inputMode="decimal" defaultValue={s.tax_rate || ''} /></div>
+      <div className="field">
+        <label htmlFor="co-mattax">Tax you pay on materials %</label><input id="co-mattax" name="material_tax_rate" inputMode="decimal" defaultValue={s.material_tax_rate || ''} />
+        <small>Counted as part of material cost on estimates, so margin is right. Not shown to customers.</small>
+      </div>
+      <div className="field">
+        <label htmlFor="co-tax">Sales tax added to customer estimates %</label><input id="co-tax" name="tax_rate" inputMode="decimal" defaultValue={s.tax_rate || ''} />
+        <small>Leave at 0 if customers don&apos;t pay sales tax on your estimates.</small>
+      </div>
       <div className="field" style={{ gridColumn: '1 / -1' }}>
         <label htmlFor="co-review">Review link</label><input id="co-review" name="review_url" type="url" defaultValue={s.review_url} placeholder="https://g.page/r/…" />
         <small>Used in the review-request email.</small>

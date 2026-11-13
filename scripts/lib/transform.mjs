@@ -149,7 +149,7 @@ export function transformBackup(backup, { includeSample = false, profiles = [] }
     reason: str(o.reason), sent_at: o.status === 'sent' ? iso(o.sentAt || o.sendAt) : null,
   }));
 
-  const catalog_items = (s.catalog || []).map((c, i) => ({ description: str(c.desc), unit: str(c.unit) || 'EA', price: num(c.price), sort: i + 1 }));
+  const catalog_items = (s.catalog || []).map((c, i) => ({ name: str(c.desc) || 'Item', description: '', unit: str(c.unit) || 'EA', price: num(c.price), sort: i + 1 }));
   const st = s.settings || {};
   const settings = {
     company: str(st.company) || 'Your Roofing Company', phone: str(st.phone), email: str(st.email), address: str(st.address),

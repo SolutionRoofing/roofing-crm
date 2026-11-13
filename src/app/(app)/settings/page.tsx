@@ -5,6 +5,7 @@ import { isAdmin, requireUser, ROLE_LABELS } from '@/lib/auth';
 import { PLAN_LIMITS, WARN_AT } from '@/lib/plan-limits';
 import { createClient } from '@/lib/supabase/server';
 import { deleteCatalogItem, saveCatalogItem } from './actions';
+import { deleteEstimateTemplate } from '../documents/actions';
 import { CompanyForm, ProfileForm } from './forms';
 
 export const metadata: Metadata = { title: 'Settings' };
@@ -20,16 +21,18 @@ export default function SettingsPage() {
   );
 }
 
-type Item = { id: string; description: string; unit: string; price: number };
+type Item = { id: string; name: string; description: string; unit: string; price: number; material_cost: number; labor_cost: number; markup: number; category: string };
+type Template = { id: string; name: string; items: unknown[]; created_by: string | null };
 
 async function Settings() {
   const me = await requireUser();
   const admin = isAdmin(me);
   const supabase = await createClient();
-  const [{ data: profile }, { data: settings }, { data: catalog }] = await Promise.all([
+  const [{ data: profile }, { data: settings }, { data: catalog }, { data: templates }] = await Promise.all([
     supabase.from('profiles').select('full_name, phone, email').eq('id', me.id).single(),
     admin ? supabase.from('settings').select('*').eq('id', 1).single() : Promise.resolve({ data: null }),
-    admin ? supabase.from('catalog_items').select('id, description, unit, price').order('sort').order('description') : Promise.resolve({ data: null }),
+    admin ? supabase.from('catalog_items').select('id, name, description, unit, price, material_cost, labor_cost, markup, category').order('category').order('sort').order('name') : Promise.resolve({ data: null }),
+    me.role === 'crew' ? Promise.resolve({ data: null }) : supabase.from('estimate_templates').select('id, name, items, created_by').order('name'),
   ]);
 
   return (
@@ -53,29 +56,41 @@ async function Settings() {
       )}
       {catalog && (
         <section className="panel" id="price-list" style={{ marginTop: 14 }}>
-          <div className="panel-head"><h2>Price list</h2><span className="muted">Used when building estimates</span></div>
-          <p className="muted" style={{ marginBottom: 8 }}>The starter prices are placeholders. Replace them with your own.</p>
+          <div className="panel-head"><h2>Price list</h2><span className="muted">Products &amp; services for estimates</span></div>
+          <p className="muted" style={{ marginBottom: 10 }}>
+            Enter material and labor cost per unit and a markup, and the price works itself out (material cost includes the
+            {' '}{Number(settings?.material_tax_rate) || 0}% tax you pay). Or leave costs at 0 and type a price.
+          </p>
+          <div className="cat-head" aria-hidden="true">
+            <span>Item name</span><span>Category</span><span>UoM</span><span>Material</span><span>Labor</span><span>Markup %</span><span>Price</span><span />
+          </div>
           {(catalog as Item[]).map(c => (
             <div className="catalog-row" key={c.id}>
-              <form action={saveCatalogItem} className="inline-form">
-                <input type="hidden" name="id" value={c.id} />
-                <input name="description" defaultValue={c.description} aria-label="Description" className="grow-input" required />
-                <input name="unit" defaultValue={c.unit} aria-label="Unit" style={{ width: 64 }} />
-                <input name="price" defaultValue={Number(c.price).toFixed(2)} inputMode="decimal" aria-label="Price" style={{ width: 96 }} />
-                <SubmitButton className="btn small" pendingText="…">Save</SubmitButton>
-              </form>
+              <CatalogForm c={c} />
               <form action={deleteCatalogItem}>
                 <input type="hidden" name="id" value={c.id} />
-                <ConfirmButton message={`Remove "${c.description}" from the price list?`} className="icon-btn">×</ConfirmButton>
+                <ConfirmButton message={`Remove "${c.name}" from the price list?`} className="icon-btn">×</ConfirmButton>
               </form>
             </div>
           ))}
-          <form action={saveCatalogItem} className="inline-form add-row">
-            <input name="description" placeholder="New item, e.g. Chimney flashing" aria-label="New item description" className="grow-input" required />
-            <input name="unit" placeholder="EA" aria-label="New item unit" style={{ width: 64 }} />
-            <input name="price" placeholder="0.00" inputMode="decimal" aria-label="New item price" style={{ width: 96 }} />
-            <SubmitButton className="btn small primary" pendingText="Adding…">Add</SubmitButton>
-          </form>
+          <div className="catalog-row add-row"><CatalogForm /></div>
+        </section>
+      )}
+      {templates && (
+        <section className="panel" style={{ marginTop: 14 }}>
+          <div className="panel-head"><h2>Estimate templates</h2><span className="muted">Made with &quot;Save as template&quot; in the estimate editor</span></div>
+          {(templates as Template[]).length === 0 && <p className="muted">No templates yet. Build an estimate and choose Save as template.</p>}
+          {(templates as Template[]).map(t => (
+            <div className="line-item" key={t.id}>
+              <span className="grow"><b>{t.name}</b><small>{t.items.length} line{t.items.length === 1 ? '' : 's'}</small></span>
+              {(admin || t.created_by === me.id) && (
+                <form action={deleteEstimateTemplate}>
+                  <input type="hidden" name="id" value={t.id} />
+                  <ConfirmButton message={`Delete the template "${t.name}"?`} className="icon-btn">×</ConfirmButton>
+                </form>
+              )}
+            </div>
+          ))}
         </section>
       )}
     </>
@@ -124,5 +139,24 @@ async function PlanUsage() {
         })}
       </div>
     </section>
+  );
+}
+
+/** One price list row (or the "add" row when no item is given). */
+function CatalogForm({ c }: { c?: Item }) {
+  const n = c ? c.name : 'new item';
+  return (
+    <form action={saveCatalogItem} className="cat-form">
+      {c && <input type="hidden" name="id" value={c.id} />}
+      <input name="name" defaultValue={c?.name} placeholder={c ? '' : 'New item, e.g. Chimney flashing'} aria-label={`Item name for ${n}`} required />
+      <input name="category" defaultValue={c?.category} placeholder="Roofing" aria-label={`Category for ${n}`} />
+      <input name="unit" defaultValue={c?.unit} placeholder="EA" aria-label={`Unit for ${n}`} />
+      <input name="material_cost" defaultValue={c ? Number(c.material_cost).toFixed(2) : ''} placeholder="0.00" inputMode="decimal" aria-label={`Material cost for ${n}`} />
+      <input name="labor_cost" defaultValue={c ? Number(c.labor_cost).toFixed(2) : ''} placeholder="0.00" inputMode="decimal" aria-label={`Labor cost for ${n}`} />
+      <input name="markup" defaultValue={c && (Number(c.material_cost) + Number(c.labor_cost) > 0) ? String(Number(c.markup)) : ''} placeholder="—" inputMode="decimal" aria-label={`Markup percent for ${n}`} />
+      <input name="price" defaultValue={c ? Number(c.price).toFixed(2) : ''} placeholder="0.00" inputMode="decimal" aria-label={`Price for ${n}`} />
+      <SubmitButton className={`btn small${c ? '' : ' primary'}`} pendingText="…">{c ? 'Save' : 'Add'}</SubmitButton>
+      <textarea name="description" defaultValue={c?.description} rows={1} placeholder="Description shown on the estimate (optional)" aria-label={`Description for ${n}`} className="cat-desc" />
+    </form>
   );
 }

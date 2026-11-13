@@ -3,10 +3,10 @@
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/lib/auth';
+import { isAdmin, requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { isoDate, number, oneOf, text, uuid } from '@/lib/form';
-import { cleanLines, docTotals, PAYMENT_METHODS } from '@/lib/documents';
+import { cleanLines, docTotals, isItem, PAYMENT_METHODS, type Line } from '@/lib/documents';
 import { addDaysISO, todayISO } from '@/lib/format';
 import type { FormState } from '@/app/login/actions';
 import { emailConfigured, processOutbox, siteUrl } from '@/lib/email/send';
@@ -23,22 +23,26 @@ function refresh(docId: string | null, jobId: string | null) {
 
 /** Create or update an estimate/invoice from the editor. */
 export async function saveDocument(_prev: FormState, fd: FormData): Promise<FormState> {
-  await requireUser([...STAFF]);
+  const me = await requireUser([...STAFF]);
   const id = uuid(fd, 'id');
   const kind = oneOf(fd, 'kind', ['estimate', 'invoice'] as const, 'estimate');
   const jobId = uuid(fd, 'job_id');
   let items;
   try { items = cleanLines(JSON.parse(text(fd, 'items', 200000) || '[]')); } catch { return { error: 'The line items could not be read.' }; }
-  if (!items.length) return { error: 'Add at least one line item.' };
+  if (!items.some(isItem)) return { error: 'Add at least one line item.' };
   const taxRate = number(fd, 'tax_rate');
-  if (taxRate < 0 || taxRate > 25) return { error: 'Tax rate should be between 0 and 25%.' };
+  if (taxRate < 0 || taxRate > 25) return { error: 'Sales tax should be between 0 and 25%.' };
+  const materialTax = number(fd, 'material_tax_rate');
+  if (materialTax < 0 || materialTax > 25) return { error: 'Material tax should be between 0 and 25%.' };
+
+  const supabase = await createClient();
+  items = await saveNewProducts(supabase, items, isAdmin(me));
   const fields = {
-    items, tax_rate: taxRate, notes: text(fd, 'notes', 4000),
+    items, tax_rate: taxRate, material_tax_rate: materialTax, notes: text(fd, 'notes', 4000), internal_notes: text(fd, 'internal_notes', 4000),
     date: isoDate(fd, 'date') ?? todayISO(),
     due_date: kind === 'invoice' ? isoDate(fd, 'due_date') : null,
   };
 
-  const supabase = await createClient();
   if (id) {
     const { data: existing } = await supabase.from('documents').select('kind, status, job_id, signed_at, payments(amount)').eq('id', id).single();
     if (!existing) return { error: 'That document no longer exists.' };
@@ -60,6 +64,78 @@ export async function saveDocument(_prev: FormState, fd: FormData): Promise<Form
   await supabase.from('job_activity').insert({ job_id: jobId, kind: 'system', text: `${kind === 'invoice' ? 'Invoice' : 'Estimate'} created` });
   refresh(data.id, jobId);
   redirect(`/documents/${data.id}`);
+}
+
+type Db = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Lines picked as "Add new product" go into the price list (owner/office only, like JobNimbus
+ * Products & Services). Everyone else's new lines simply stay one-off lines on this estimate.
+ */
+async function saveNewProducts(supabase: Db, items: Line[], admin: boolean): Promise<Line[]> {
+  const fresh = items.filter(l => isItem(l) && l.save);
+  if (!admin || !fresh.length) return items.map(l => (isItem(l) && l.save ? { ...l, save: undefined } : l)).map(strip);
+  const out: Line[] = [];
+  for (const l of items) {
+    if (!isItem(l) || !l.save) { out.push(strip(l)); continue; }
+    const { data } = await supabase.from('catalog_items').insert({
+      name: l.name, description: l.desc, unit: l.unit || 'EA', price: l.price,
+      material_cost: l.mat, labor_cost: l.lab, markup: l.markup, sort: 1000,
+    }).select('id').single();
+    out.push(strip({ ...l, ...(data ? { pid: data.id } : {}) }));
+  }
+  return out;
+}
+const strip = (l: Line): Line => {
+  if (!isItem(l)) return l;
+  const { save: _save, ...rest } = l; // eslint-disable-line @typescript-eslint/no-unused-vars -- drop the editor-only flag
+  return rest;
+};
+
+/** "Save as template" from the editor: keeps the lines and customer note under a name. */
+export async function saveEstimateTemplate(name: string, rawItems: unknown, notes: string): Promise<FormState> {
+  await requireUser([...STAFF]);
+  const clean = String(name ?? '').trim().slice(0, 120);
+  if (!clean) return { error: 'Give the template a name.' };
+  const items = cleanLines(rawItems).map(strip);
+  if (!items.some(isItem)) return { error: 'Add at least one line item first.' };
+  const supabase = await createClient();
+  const { error } = await supabase.from('estimate_templates').insert({ name: clean, items, notes: String(notes ?? '').slice(0, 4000) });
+  if (error) return { error: error.message };
+  revalidatePath('/documents/new');
+  revalidatePath('/settings');
+  return { ok: `Saved as "${clean}".` };
+}
+
+export async function deleteEstimateTemplate(fd: FormData) {
+  await requireUser([...STAFF]);
+  const id = uuid(fd, 'id');
+  if (!id) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from('estimate_templates').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/settings');
+}
+
+/** Copy an estimate as a new draft (same lines, costs and notes) and open it for editing. */
+export async function duplicateDocument(fd: FormData) {
+  await requireUser([...STAFF]);
+  const id = uuid(fd, 'id');
+  if (!id) return;
+  const supabase = await createClient();
+  const { data: d, error } = await supabase.from('documents')
+    .select('kind, job_id, items, tax_rate, material_tax_rate, notes, internal_notes').eq('id', id).single();
+  if (error) throw new Error(error.message);
+  const today = todayISO();
+  const { data: copy, error: e2 } = await supabase.from('documents').insert({
+    kind: d.kind, job_id: d.job_id, items: d.items, tax_rate: d.tax_rate, material_tax_rate: d.material_tax_rate,
+    notes: d.notes, internal_notes: d.internal_notes, status: 'draft', date: today,
+    due_date: d.kind === 'invoice' ? addDaysISO(today, 14) : null,
+  }).select('id').single();
+  if (e2) throw new Error(e2.message);
+  await supabase.from('job_activity').insert({ job_id: d.job_id, kind: 'system', text: `${d.kind === 'invoice' ? 'Invoice' : 'Estimate'} duplicated` });
+  refresh(copy.id, d.job_id);
+  redirect(`/documents/${copy.id}/edit`);
 }
 
 /** Mark sent / accepted (e.g. signed on paper) / declined / void. Triggers move the job forward. */
@@ -85,11 +161,12 @@ export async function convertToInvoice(fd: FormData) {
   const id = uuid(fd, 'id');
   if (!id) return;
   const supabase = await createClient();
-  const { data: est, error } = await supabase.from('documents').select('job_id, items, tax_rate, notes').eq('id', id).single();
+  const { data: est, error } = await supabase.from('documents').select('job_id, items, tax_rate, material_tax_rate, notes, internal_notes').eq('id', id).single();
   if (error) throw new Error(error.message);
   const today = todayISO();
   const { data: inv, error: e2 } = await supabase.from('documents').insert({
-    kind: 'invoice', job_id: est.job_id, items: est.items, tax_rate: est.tax_rate, notes: est.notes,
+    kind: 'invoice', job_id: est.job_id, items: est.items, tax_rate: est.tax_rate, material_tax_rate: est.material_tax_rate,
+    notes: est.notes, internal_notes: est.internal_notes,
     from_id: id, status: 'draft', date: today, due_date: addDaysISO(today, 14),
   }).select('id').single();
   if (e2) throw new Error(e2.message);
