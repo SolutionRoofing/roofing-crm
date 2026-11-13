@@ -14,7 +14,7 @@ export function ServiceFields({ selected = [], insurance = false }: { selected?:
           ))}
         </div>
       </fieldset>
-      <div className="field check-field" style={{ gridColumn: '1 / -1' }}>
+      <div className="field check-field stack" style={{ gridColumn: '1 / -1' }}>
         <label><input type="checkbox" name="insurance" defaultChecked={insurance} /> Insurance claim</label>
         <small>Adds a Claim section to the job for the carrier, adjuster and claim money.</small>
       </div>

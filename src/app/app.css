@@ -152,3 +152,5 @@
 .addr-list li { padding: 9px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; }
 .addr-list li:hover, .addr-list li.on { background: var(--accent-soft); }
 .addr-map { display: inline-block; margin-top: 4px; font-size: 13px; }
+.check-field.stack { flex-direction: column; gap: 2px; }
+.check-field.stack small { margin: 0 0 0 26px; }
