@@ -110,6 +110,22 @@ function audienceFilter(key: string) {
   };
 }
 
+const validAudience = (a: string) => ['all', 'past', 'open', 'lost'].includes(a) || LEAD_SOURCES.some(s => `source:${s}` === a);
+
+async function audienceContacts(audience: string) {
+  const supabase = await createClient();
+  const { data: contacts } = await supabase.from('contacts')
+    .select('id, email, source, jobs(stage)').eq('marketing', true).is('unsubscribed_at', null).neq('email', '');
+  return ((contacts ?? []) as AudienceContact[]).filter(audienceFilter(audience));
+}
+
+/** How many opted-in customers a campaign would reach (shown before queuing it). */
+export async function countAudience(audience: string): Promise<number> {
+  await requireUser([...ADMIN]);
+  if (!validAudience(audience)) return 0;
+  return (await audienceContacts(audience)).length;
+}
+
 /** Queues a marketing email to every opted-in customer in the audience. */
 export async function createCampaign(_prev: FormState, fd: FormData): Promise<FormState> {
   await requireUser([...ADMIN]);
@@ -118,17 +134,15 @@ export async function createCampaign(_prev: FormState, fd: FormData): Promise<Fo
   const audience = text(fd, 'audience', 60);
   const date = isoDate(fd, 'date');
   if (!name || !templateId || !date) return { error: 'Fill in the name, template and send date.' };
-  if (!['all', 'past', 'open', 'lost'].includes(audience) && !LEAD_SOURCES.some(s => `source:${s}` === audience)) return { error: 'Pick an audience.' };
+  if (!validAudience(audience)) return { error: 'Pick an audience.' };
 
   const supabase = await createClient();
   const { data: t } = await supabase.from('templates').select('id, subject, body, kind').eq('id', templateId).single();
   if (!t || t.kind !== 'marketing') return { error: 'Campaigns use marketing templates (they get the unsubscribe footer).' };
-  const { data: contacts } = await supabase.from('contacts')
-    .select('id, email, source, jobs(stage)').eq('marketing', true).is('unsubscribed_at', null).neq('email', '');
-  const people = ((contacts ?? []) as AudienceContact[]).filter(audienceFilter(audience));
+  const people = await audienceContacts(audience);
   if (!people.length) return { error: 'No opted-in customers with an email match that audience.' };
 
-  const sendAt = new Date(`${date}T14:00:00Z`).toISOString(); // about 8–9 AM in US Central time
+  const sendAt = new Date(`${date}T14:00:00Z`).toISOString(); // 9 AM Eastern in winter, 10 AM in summer
   const { data: camp, error } = await supabase.from('campaigns')
     .insert({ name, template_id: templateId, audience_label: fd.get('audience_label')?.toString().slice(0, 80) ?? audience, recipient_count: people.length })
     .select('id').single();
