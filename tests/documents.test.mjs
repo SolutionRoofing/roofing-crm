@@ -68,3 +68,19 @@ test('old lines ({ desc, qty, unit, price }) read as item names; junk is cleaned
   assert.deepEqual(clean[0], { name: 'Ridge vent', desc: 'Shingle-over', unit: 'LF', qty: 40, mat: 2.5, lab: 1, markup: 60, price: 0 });
   assert.deepEqual(clean[1], { type: 'section', title: 'Gutters', display: 'items', show_total: true });
 });
+
+test('customer view folds hidden sections into the package line (matches the database)', async () => {
+  const { customerLines, docTotals } = await import('../src/lib/documents.ts');
+  const items = [
+    { name: 'Turtle Tough Roofing System', desc: '', unit: 'EA', qty: 0, mat: 0, lab: 0, markup: 0, price: 0 },
+    { type: 'section', title: 'Materials', display: 'hidden', show_total: false },
+    { name: 'Shingles', desc: '', unit: 'BD', qty: 90, mat: 44.17, lab: 0, markup: 60, price: 70 },
+    { type: 'section', title: 'Gutters', display: 'items', show_total: true },
+    { name: 'Gutter', desc: '', unit: 'LF', qty: 100, mat: 0, lab: 0, markup: 0, price: 9 },
+  ];
+  const out = customerLines(items);
+  assert.equal(out.length, 3);
+  assert.deepEqual([out[0].qty, out[0].price], [1, 6300]);
+  assert.equal(docTotals(out, 0).total, docTotals(items, 0).total, 'same total either way');
+  assert.equal(customerLines([items[1], items[2]])[0].name, 'Roofing project', 'no visible line: a package line is added');
+});

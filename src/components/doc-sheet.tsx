@@ -1,5 +1,5 @@
 // The printable estimate / invoice. Used on the staff document page and the customer link.
-import { docLabel, docTotals, isSection, lineAmount, normalizeLines, type ItemLine, type Line, type SectionLine } from '@/lib/documents';
+import { customerLines, docLabel, docTotals, isSection, lineAmount, normalizeLines, type ItemLine, type Line, type SectionLine, type Selection } from '@/lib/documents';
 import { fmtDay, fullAddress, fullName, moneyCents } from '@/lib/format';
 import { Logo } from './logo';
 
@@ -18,10 +18,14 @@ export type SheetData = {
   job: { number: number; name: string };
   customer: { first?: string; last?: string; address?: string; city?: string; st?: string; zip?: string; email?: string; phone?: string } | null;
   company: { company: string; phone: string; email: string; address: string; license: string; terms: string };
+  /** Customer answers, e.g. Shingle color (shown once filled in). */
+  selections?: Selection[];
 };
 
 export function DocSheet({ d, signature }: { d: SheetData; signature?: string | null }) {
-  const items = normalizeLines(d.items);
+  // The customer's view: hidden sections fold into the package line (same as the customer link).
+  const items = customerLines(normalizeLines(d.items));
+  const answered = (d.selections ?? []).filter(q => q.label && q.value);
   const t = docTotals(items, d.tax_rate, d.paid);
   const isInvoice = d.kind === 'invoice';
   return (
@@ -66,6 +70,9 @@ export function DocSheet({ d, signature }: { d: SheetData; signature?: string | 
           {isInvoice && <tr><td><b>Balance due</b></td><td className="r"><b>{moneyCents(t.balance)}</b></td></tr>}
         </tbody>
       </table>
+      {answered.length > 0 && (
+        <div className="sheet-note"><b>Selections</b>{answered.map((q, i) => <p key={i}>{q.label}: {q.value}</p>)}</div>
+      )}
       {d.notes && <div className="sheet-note"><b>Notes</b><p style={{ whiteSpace: 'pre-wrap' }}>{d.notes}</p></div>}
       {!isInvoice && d.company.terms && <div className="sheet-note"><b>Terms</b><p className="muted" style={{ whiteSpace: 'pre-wrap' }}>{d.company.terms}</p></div>}
       {!isInvoice && (

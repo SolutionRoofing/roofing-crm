@@ -478,3 +478,44 @@ test('estimate templates: staff share them, crews cannot see them; work orders l
   const scope = (await one(db, `select scope from work_orders where id = $1`, [wo])).scope;
   assert.deepEqual(scope, [{ desc: 'Ridge vent', qty: 40, unit: 'LF' }]);
 });
+
+test('options, hidden sections, upgrades and selections: customer picks, signs, estimate locks to the pick', async () => {
+  const replacement = [
+    { name: 'Turtle Tough Roofing System', desc: 'Complete replacement', qty: 1, unit: 'EA', price: 0 },
+    { type: 'section', title: 'Materials', display: 'hidden', show_total: false },
+    { name: 'Landmark Pro', desc: '', qty: 90, unit: 'BD', mat: 44.17, lab: 0, markup: 60, price: 70 },
+    { type: 'section', title: 'Labor', display: 'hidden', show_total: false },
+    { name: 'Labor 3/12-6/12', desc: '', qty: 30, unit: 'SQ', mat: 0, lab: 90, markup: 50, price: 135 },
+  ];
+  const repair = [{ name: 'Repair', desc: 'Fix the leak at the chimney', qty: 1, unit: 'EA', lab: 300, price: 650 }];
+  let est, token;
+  await as(db, u.rep1, async q => {
+    const job = (await one(q, `insert into jobs (name, contact_id) values ('Options test', $1) returning id`, [ids.contact])).id;
+    est = (await one(q, `insert into documents (kind, job_id, items, options, upgrades, selections)
+      values ('estimate', $1, $2, $3, $4, $5) returning id`, [job, JSON.stringify(replacement),
+      JSON.stringify([{ name: 'Replacement', items: replacement }, { name: 'Repair', items: repair }]),
+      JSON.stringify([{ name: 'Property Shield', desc: 'Catch-all system', price: 1119.39 }]),
+      JSON.stringify([{ label: 'Shingle color', value: '' }])])).id;
+    token = (await one(q, `select share_document($1) as t`, [est])).t;
+  });
+
+  const doc = await asAnon(db, async q => (await one(q, `select get_shared_document($1) as d`, [token])).d);
+  assert.equal(doc.options.length, 2);
+  // Hidden materials + labor fold into the package line; no costs leak.
+  assert.deepEqual(doc.options[0].items, [{ name: 'Turtle Tough Roofing System', desc: 'Complete replacement', qty: 1, unit: 'EA', price: 10350 }]);
+  assert.equal(Number(doc.options[0].total), 10350);
+  assert.equal(Number(doc.options[1].total), 650);
+  assert.deepEqual(doc.upgrades, [{ name: 'Property Shield', desc: 'Catch-all system', price: 1119.39 }]);
+
+  await assert.rejects(asAnon(db, q => q.query(`select sign_document($1, 'Avery Thompson', null, null, null)`, [token])), /choose an option/);
+  await assert.rejects(asAnon(db, q => q.query(`select sign_document($1, 'Avery Thompson', null, null, 0, array[-1])`, [token])), /not available/);
+  await asAnon(db, q => q.query(`select sign_document($1, 'Avery Thompson', null, null, 1, array[0], $2)`, [token, JSON.stringify(['Weathered Wood'])]));
+
+  const signed = await one(db, `select items, chosen_option, selections, private.document_total(items, tax_rate) as total from documents where id = $1`, [est]);
+  assert.equal(signed.chosen_option, 1);
+  assert.equal(Number(signed.total), 1769.39, 'repair + upgrade');
+  assert.equal(signed.items[0].name, 'Repair');
+  assert.equal(signed.items.at(-1).name, 'Property Shield');
+  assert.deepEqual(signed.selections, [{ label: 'Shingle color', value: 'Weathered Wood' }]);
+  await assert.rejects(as(db, u.office, q => q.query(`update documents set options = '[]' where id = $1`, [est])), /signed by the customer/);
+});

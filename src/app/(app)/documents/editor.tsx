@@ -5,7 +5,7 @@ import { useActionState, useEffect, useId, useMemo, useRef, useState, useTransit
 import type { FormState } from '@/app/login/actions';
 import {
   applyMargin, costTotals, docTotals, isItem, isSection, lineAmount, markupFor, priceFor, sectionTotals, SECTION_DISPLAYS, unitCost,
-  type CatalogItem, type EstimateTemplate, type ItemLine, type Line, type SectionLine,
+  type CatalogItem, type EstimateTemplate, type EstOption, type ItemLine, type Line, type SectionLine, type Selection, type Upgrade,
 } from '@/lib/documents';
 import { moneyCents } from '@/lib/format';
 import { saveDocument, saveEstimateTemplate } from './actions';
@@ -13,8 +13,10 @@ import { saveDocument, saveEstimateTemplate } from './actions';
 type Initial = {
   id?: string; kind: 'estimate' | 'invoice'; job_id: string; items: Line[]; tax_rate: number; material_tax_rate: number;
   notes: string; internal_notes: string; date: string; due_date: string | null;
+  options: EstOption[]; upgrades: Upgrade[]; selections: Selection[];
 };
 type Row = { k: number; l: Line };
+type Opt = { k: number; name: string; rows: Row[] };
 
 let nextKey = 1;
 const row = (l: Line): Row => ({ k: nextKey++, l });
@@ -22,6 +24,8 @@ const blankItem = (): ItemLine => ({ name: '', desc: '', unit: 'EA', qty: 1, mat
 const blankSection = (): SectionLine => ({ type: 'section', title: '', display: 'items', show_total: true });
 const isBlank = (l: Line) => isItem(l) && !l.name.trim() && !l.desc.trim() && !l.price && !l.mat && !l.lab;
 const pct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)}%`;
+const opt = (name: string, items: Line[]): Opt => ({ k: nextKey++, name, rows: (items.length ? items : [blankItem()]).map(row) });
+const DEFAULT_NAMES = ['Good', 'Better', 'Best', 'Repair', 'Option 5', 'Option 6'];
 
 /**
  * JobNimbus-style estimate builder: same columns in the same order (item, description, unit, qty,
@@ -32,7 +36,16 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
   initial: Initial; catalog: CatalogItem[]; templates: EstimateTemplate[]; canSaveProducts: boolean; cancelHref: string;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveDocument, {});
-  const [rows, setRows] = useState<Row[]>(() => (initial.items.length ? initial.items : [blankItem()]).map(row));
+  // Options (Good / Better / Best, Repair…). One option = a plain estimate with no choices for the customer.
+  const [opts, setOpts] = useState<Opt[]>(() => (initial.options.length > 1
+    ? initial.options.map(o => opt(o.name, o.items))
+    : [opt(initial.options[0]?.name ?? 'Estimate', initial.items)]));
+  const [active, setActive] = useState(0);
+  const [upgrades, setUpgrades] = useState<Upgrade[]>(initial.upgrades);
+  const [selections, setSelections] = useState<Selection[]>(initial.selections);
+  const cur = opts[Math.min(active, opts.length - 1)];
+  const rows = cur.rows;
+  const setRows = (fn: (rs: Row[]) => Row[]) => setOpts(os => os.map(o => (o.k === cur.k ? { ...o, rows: fn(o.rows) } : o)));
   const [taxRate, setTaxRate] = useState(initial.tax_rate ?? 0);
   const [matTax, setMatTax] = useState(initial.material_tax_rate ?? 0);
   const [notes, setNotes] = useState(initial.notes);
@@ -61,9 +74,33 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
   const addTemplate = (id: string) => {
     const t = templates.find(x => x.id === id);
     if (!t) return;
-    setRows(rs => [...rs.filter(r => !isBlank(r.l)), ...t.items.map(row)]);
+    const empty = opts.every(o => o.rows.every(r => isBlank(r.l)));
+    if (t.options.length > 1 && empty) {
+      // A template with options (e.g. Replacement + Repair) sets up the whole estimate.
+      setOpts(t.options.map(o => opt(o.name, o.items)));
+      setActive(0);
+    } else {
+      setRows(rs => [...rs.filter(r => !isBlank(r.l)), ...(t.options.length > 1 ? t.options[0].items : t.items).map(row)]);
+    }
+    if (!upgrades.length && t.upgrades.length) setUpgrades(t.upgrades);
+    if (!selections.length && t.selections.length) setSelections(t.selections);
     if (!notes.trim() && t.notes) setNotes(t.notes);
   };
+  const optionLines = opts.map(o => o.rows.map(r => r.l));
+  const multi = opts.length > 1;
+  const addOption = (copy: boolean) => {
+    const name = DEFAULT_NAMES.find(n => !opts.some(o => o.name === n)) ?? 'Option ' + (opts.length + 1);
+    setOpts(os => [...os, opt(name, copy ? cur.rows.map(r => r.l) : [])]);
+    setActive(opts.length);
+  };
+  const renameOption = (name: string) => setOpts(os => os.map(o => (o.k === cur.k ? { ...o, name } : o)));
+  const removeOption = () => {
+    if (!multi || !window.confirm('Remove the "' + cur.name + '" option and its lines?')) return;
+    setOpts(os => os.filter(o => o.k !== cur.k));
+    setActive(0);
+  };
+  const makeFirst = () => { setOpts(os => [cur, ...os.filter(o => o.k !== cur.k)]); setActive(0); };
+  const optionsPayload = multi ? opts.map((o, i) => ({ name: o.name, items: optionLines[i] })) : [];
   const setMargin = () => {
     const m = Number(marginGoal);
     if (!Number.isFinite(m) || m < 0 || m >= 95) return;
@@ -76,7 +113,10 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
       <input type="hidden" name="id" value={initial.id ?? ''} />
       <input type="hidden" name="kind" value={initial.kind} />
       <input type="hidden" name="job_id" value={initial.job_id} />
-      <input type="hidden" name="items" value={JSON.stringify(lines)} />
+      <input type="hidden" name="items" value={JSON.stringify(optionLines[0])} />
+      <input type="hidden" name="options" value={JSON.stringify(optionsPayload)} />
+      <input type="hidden" name="upgrades" value={JSON.stringify(upgrades)} />
+      <input type="hidden" name="selections" value={JSON.stringify(selections)} />
       <input type="hidden" name="tax_rate" value={taxRate} />
       <input type="hidden" name="material_tax_rate" value={matTax} />
       {state.error && <p className="form-error" role="alert" style={{ marginBottom: 12 }}>{state.error}</p>}
@@ -95,7 +135,31 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
         )}
       </div>
 
-      <div className="est-table" role="table" aria-label="Line items">
+      {!isInvoice && (
+        <div className="est-options">
+          <div className="est-tabs" role="tablist" aria-label="Options">
+            {opts.map((o, i) => (
+              <button key={o.k} type="button" role="tab" aria-selected={o.k === cur.k} className={o.k === cur.k ? 'on' : ''} onClick={() => setActive(i)}>
+                <span>{o.name || 'Option ' + (i + 1)}</span>
+                <small>{moneyCents(docTotals(optionLines[i], taxRate).total)}</small>
+              </button>
+            ))}
+            <button type="button" className="est-tab-add" onClick={() => addOption(false)}>+ Add option</button>
+          </div>
+          {multi && (
+            <div className="est-option-tools">
+              <label htmlFor="opt-name">Option name</label>
+              <input id="opt-name" value={cur.name} onChange={e => renameOption(e.target.value)} />
+              <button type="button" className="btn small" onClick={() => addOption(true)}>Copy this option</button>
+              {opts[0].k !== cur.k && <button type="button" className="btn small" onClick={makeFirst}>Make it the first option</button>}
+              <button type="button" className="btn small danger-ghost" onClick={removeOption}>Remove option</button>
+              <small className="muted">The customer picks one option when signing. Until then, the first option counts as the job&apos;s value.</small>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="est-table" role="table" aria-label={multi ? 'Line items for ' + cur.name : 'Line items'}>
         <div className="est-row est-head" role="row">
           <span /><span>Item name</span><span>Description</span><span>UoM</span><span className="r">Qty</span>
           <span className="r" title="Material cost (before the tax you pay) over labor cost, per unit">M/L cost</span>
@@ -139,6 +203,8 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
             <label htmlFor="doc-internal">Internal note <span className="muted">(staff only)</span></label>
             <textarea id="doc-internal" name="internal_notes" rows={3} defaultValue={initial.internal_notes} placeholder="Supplier quote #, crew notes, anything the customer shouldn't see" />
           </div>
+          {!isInvoice && <UpgradesEditor upgrades={upgrades} onChange={setUpgrades} />}
+          {!isInvoice && <SelectionsEditor selections={selections} onChange={setSelections} />}
         </div>
 
         <div className="est-summary">
@@ -179,7 +245,7 @@ export function DocEditor({ initial, catalog, templates, canSaveProducts, cancel
       <div className="est-actions">
         <Link className="btn" href={cancelHref}>Cancel</Link>
         <span className="spacer" />
-        {!isInvoice && <SaveTemplate lines={lines} notes={notes} />}
+        {!isInvoice && <SaveTemplate payload={{ items: optionLines[0], notes, upgrades, selections, options: optionsPayload }} />}
         <button className="btn primary" disabled={pending}>{pending ? 'Saving…' : `Save ${isInvoice ? 'invoice' : 'estimate'}`}</button>
       </div>
     </form>
@@ -247,6 +313,7 @@ function SectionRow({ l, total, onChange }: { l: SectionLine; total: number; onC
       <label className="inline-check"><input type="checkbox" checked={l.show_total} onChange={e => onChange({ ...l, show_total: e.target.checked })} /> Show section total</label>
       <span className="spacer" />
       <b className="num">{moneyCents(total)}</b>
+      {l.display === 'hidden' && <small className="est-hidden-note">The customer doesn&apos;t see these lines. Their total is added into the first line the customer does see (your package line).</small>}
     </span>
   );
 }
@@ -360,7 +427,8 @@ function PctInput({ id, value, onChange }: { id: string; value: number; onChange
 }
 
 /** "Save as template": stores the current lines and customer note under a name, without saving the estimate. */
-function SaveTemplate({ lines, notes }: { lines: Line[]; notes: string }) {
+type TemplatePayload = { items: Line[]; notes: string; options: EstOption[]; upgrades: Upgrade[]; selections: Selection[] };
+function SaveTemplate({ payload }: { payload: TemplatePayload }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [msg, setMsg] = useState<FormState>({});
@@ -379,12 +447,49 @@ function SaveTemplate({ lines, notes }: { lines: Line[]; notes: string }) {
         onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }} />
       <button type="button" className="btn small" disabled={pending || !name.trim()}
         onClick={() => start(async () => {
-          const r = await saveEstimateTemplate(name, lines, notes);
+          const r = await saveEstimateTemplate(name, payload);
           setMsg(r);
           if (r.ok) { setName(''); setOpen(false); }
         })}>{pending ? 'Saving…' : 'Save template'}</button>
       <button type="button" className="icon-btn" onClick={() => setOpen(false)} aria-label="Cancel">×</button>
       {msg.error && <small className="late">{msg.error}</small>}
     </span>
+  );
+}
+
+/** Optional upgrades the customer can tick when signing (e.g. Landscape & Property Shield). */
+function UpgradesEditor({ upgrades, onChange }: { upgrades: Upgrade[]; onChange: (u: Upgrade[]) => void }) {
+  const set = (i: number, patch: Partial<Upgrade>) => onChange(upgrades.map((u, j) => (j === i ? { ...u, ...patch } : u)));
+  return (
+    <fieldset className="est-extra">
+      <legend>Optional upgrades <span className="muted">(customer can add when signing)</span></legend>
+      {upgrades.map((u, i) => (
+        <div className="est-extra-row" key={i}>
+          <input value={u.name} onChange={e => set(i, { name: e.target.value })} placeholder="Upgrade name" aria-label={'Upgrade ' + (i + 1) + ' name'} />
+          <NumInput value={u.price} onChange={price => set(i, { price })} label={'Upgrade ' + (i + 1) + ' price'} money />
+          <button type="button" className="icon-btn" onClick={() => onChange(upgrades.filter((_, j) => j !== i))} aria-label={'Remove upgrade ' + (i + 1)}>×</button>
+          <textarea value={u.desc} rows={1} onChange={e => set(i, { desc: e.target.value })} placeholder="Short description (optional)" aria-label={'Upgrade ' + (i + 1) + ' description'} />
+        </div>
+      ))}
+      <button type="button" className="btn small" onClick={() => onChange([...upgrades, { name: '', desc: '', price: 0 }])}>+ Add upgrade</button>
+    </fieldset>
+  );
+}
+
+/** Questions the customer answers when signing, e.g. Shingle color. */
+function SelectionsEditor({ selections, onChange }: { selections: Selection[]; onChange: (s: Selection[]) => void }) {
+  const set = (i: number, patch: Partial<Selection>) => onChange(selections.map((q, j) => (j === i ? { ...q, ...patch } : q)));
+  return (
+    <fieldset className="est-extra">
+      <legend>Product selections <span className="muted">(customer answers when signing)</span></legend>
+      {selections.map((q, i) => (
+        <div className="est-extra-row sel" key={i}>
+          <input value={q.label} onChange={e => set(i, { label: e.target.value })} placeholder="Question, e.g. Shingle color" aria-label={'Selection ' + (i + 1) + ' question'} />
+          <input value={q.value} onChange={e => set(i, { value: e.target.value })} placeholder="Answer, if already known" aria-label={'Selection ' + (i + 1) + ' answer'} />
+          <button type="button" className="icon-btn" onClick={() => onChange(selections.filter((_, j) => j !== i))} aria-label={'Remove selection ' + (i + 1)}>×</button>
+        </div>
+      ))}
+      {selections.length < 6 && <button type="button" className="btn small" onClick={() => onChange([...selections, { label: '', value: '' }])}>+ Add question</button>}
+    </fieldset>
   );
 }

@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { DocSheet, type SheetData } from '@/components/doc-sheet';
 import { createClient } from '@/lib/supabase/server';
-import { docTotals } from '@/lib/documents';
-import { fullName, moneyCents } from '@/lib/format';
-import { SignForm } from './sign-form';
+import { fullName } from '@/lib/format';
+import { SignableEstimate, type SharedOption } from './choose';
+import type { Selection, Upgrade } from '@/lib/documents';
 import { PrintButton } from '@/app/(app)/documents/doc-client';
 import { PublicBar, PublicFoot } from '@/components/public-brand';
 
@@ -29,7 +29,7 @@ async function Shared({ params }: { params: PageProps<'/e/[token]'>['params'] })
   // A signed-in team member previewing the link shouldn't count as the customer opening it.
   const { data: session } = await supabase.auth.getClaims();
   const { data } = await supabase.rpc('get_shared_document', { p_token: token, p_track: !session?.claims });
-  const d = data as (SheetData & { total: number }) | null;
+  const d = data as (SheetData & { total: number; options: SharedOption[]; upgrades: Upgrade[]; selections: Selection[] }) | null;
   if (!d) {
     return (
       <div className="panel" style={{ maxWidth: 520, margin: '40px auto' }}>
@@ -38,13 +38,15 @@ async function Shared({ params }: { params: PageProps<'/e/[token]'>['params'] })
       </div>
     );
   }
-  const total = docTotals(d.items, d.tax_rate, d.paid).total;
   const canSign = d.kind === 'estimate' && d.status === 'sent' && !d.signed_at;
 
   return (
     <>
       <PublicBar company={d.company}><PrintButton /></PublicBar>
-      <DocSheet d={d} />
+      {canSign
+        ? <SignableEstimate d={d} token={token} defaultName={fullName(d.customer) === 'No customer' ? '' : fullName(d.customer)}
+            options={d.options ?? []} upgrades={d.upgrades ?? []} selections={d.selections ?? []} />
+        : <DocSheet d={d} />}
       {d.kind === 'estimate' && d.signed_at && (
         <div className="panel sign-panel no-print" role="status">
           <h2>Thank you, {d.signed_name}.</h2>
@@ -54,7 +56,6 @@ async function Shared({ params }: { params: PageProps<'/e/[token]'>['params'] })
           </p>
         </div>
       )}
-      {canSign && <SignForm token={token} defaultName={fullName(d.customer) === 'No customer' ? '' : fullName(d.customer)} total={moneyCents(total)} />}
       {d.kind === 'estimate' && d.status === 'declined' && (
         <p className="panel muted no-print">This estimate was marked declined. Contact us if you&apos;d like to revisit it.</p>
       )}

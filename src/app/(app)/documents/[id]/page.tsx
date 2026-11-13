@@ -9,7 +9,7 @@ import { DocSheet, type SheetData } from '@/components/doc-sheet';
 import { isAdmin, requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { isUuid } from '@/lib/form';
-import { costTotals, displayStatus, docLabel, docTotals, normalizeLines, STATUS_BADGE } from '@/lib/documents';
+import { cleanSelections, cleanUpgrades, costTotals, displayStatus, docLabel, docTotals, normalizeLines, normalizeOptions, STATUS_BADGE } from '@/lib/documents';
 import { fmtDateTime, fmtDay, fullName, moneyCents, todayISO } from '@/lib/format';
 import { convertToInvoice, deleteDocument, deletePayment, duplicateDocument, setDocumentStatus, shareDocument } from '../actions';
 import { CopyLink, EmailDocButton, PaymentForm, PrintButton } from '../doc-client';
@@ -48,6 +48,9 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
   const items = normalizeLines(d.items);
   const t = docTotals(items, Number(d.tax_rate), paid);
   const costs = costTotals(items, Number(d.material_tax_rate));
+  const options = normalizeOptions(d.options);
+  const upgrades = cleanUpgrades(d.upgrades);
+  const selections = cleanSelections(d.selections);
   const today = todayISO();
   const status = displayStatus(d, t.total, paid, today);
   const isInvoice = d.kind === 'invoice';
@@ -67,7 +70,7 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
 
   const sheet: SheetData = {
     kind: d.kind, number: d.number, status: d.status, date: d.date, due_date: d.due_date, items, tax_rate: Number(d.tax_rate),
-    notes: d.notes, paid, signed_name: d.signed_name, signed_at: d.signed_at, job: { number: job.number, name: job.name },
+    notes: d.notes, paid, selections, signed_name: d.signed_name, signed_at: d.signed_at, job: { number: job.number, name: job.name },
     customer: contact, company: settings ?? { company: '', phone: '', email: '', address: '', license: '', terms: '' },
   };
 
@@ -108,6 +111,25 @@ async function Doc({ params }: { params: PageProps<'/documents/[id]'>['params'] 
                 <div><span className="eyebrow">Total profit</span><b>{moneyCents(costs.profit)}</b></div>
                 <div><span className="eyebrow">Profit margin</span><b>{costs.margin}%</b></div>
               </div>
+            </section>
+          )}
+          {(options.length > 1 || upgrades.length > 0) && (
+            <section className="panel">
+              <div className="panel-head"><h2>{d.signed_at ? 'Customer chose' : 'Options'}</h2><span className="muted">{d.signed_at ? '' : 'Customer picks one'}</span></div>
+              {d.signed_at ? (
+                <p><b>{d.chosen_option !== null && options[d.chosen_option] ? options[d.chosen_option].name : 'The estimate as shown'}</b></p>
+              ) : options.map((o, i) => {
+                const c = costTotals(o.items, Number(d.material_tax_rate));
+                return (
+                  <div className="line-item" key={i}>
+                    <span className="grow"><b>{o.name}</b>{i === 0 && <small>Shown first · counts as the job value until signed</small>}</span>
+                    <span className="num" style={{ textAlign: 'right' }}>{moneyCents(docTotals(o.items, Number(d.tax_rate)).total)}<small>{c.cost > 0 ? `${c.margin}% margin` : ''}</small></span>
+                  </div>
+                );
+              })}
+              {!d.signed_at && upgrades.length > 0 && (
+                <p className="muted" style={{ marginTop: 8 }}>Upgrades offered: {upgrades.map(u => `${u.name} (${moneyCents(u.price)})`).join(', ')}</p>
+              )}
             </section>
           )}
           {d.internal_notes && (

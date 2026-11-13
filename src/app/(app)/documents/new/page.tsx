@@ -7,7 +7,7 @@ import { isAdmin, requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { isUuid } from '@/lib/form';
 import { addDaysISO, todayISO } from '@/lib/format';
-import { normalizeLines, type CatalogItem, type EstimateTemplate } from '@/lib/documents';
+import { cleanSelections, cleanUpgrades, normalizeLines, normalizeOptions, type CatalogItem, type EstimateTemplate } from '@/lib/documents';
 import { DocEditor } from '../editor';
 
 export const metadata: Metadata = { title: 'New estimate' };
@@ -31,7 +31,7 @@ async function New({ searchParams }: { searchParams: PageProps<'/documents/new'>
     supabase.from('jobs').select('id, number, name').eq('id', jobId).maybeSingle(),
     supabase.from('catalog_items').select('id, name, description, unit, price, material_cost, labor_cost, markup, category').order('sort').order('name'),
     supabase.from('settings').select('tax_rate, material_tax_rate').maybeSingle(),
-    kind === 'estimate' ? supabase.from('estimate_templates').select('id, name, items, notes').order('name') : Promise.resolve({ data: [] }),
+    kind === 'estimate' ? supabase.from('estimate_templates').select('id, name, items, notes, options, upgrades, selections').order('name') : Promise.resolve({ data: [] }),
   ]);
   if (!job) notFound();
   const today = todayISO();
@@ -41,12 +41,14 @@ async function New({ searchParams }: { searchParams: PageProps<'/documents/new'>
       <div className="page-head"><h1>New {kind}</h1></div>
       <DocEditor
         catalog={(catalog ?? []) as CatalogItem[]}
-        templates={((templates ?? []) as EstimateTemplate[]).map(t => ({ ...t, items: normalizeLines(t.items) }))}
+        templates={((templates ?? []) as EstimateTemplate[]).map(t => ({
+          ...t, items: normalizeLines(t.items), options: normalizeOptions(t.options), upgrades: cleanUpgrades(t.upgrades), selections: cleanSelections(t.selections),
+        }))}
         canSaveProducts={isAdmin(me)}
         cancelHref={`/jobs/${job.id}#money`}
         initial={{
           kind, job_id: job.id, items: [], tax_rate: Number(settings?.tax_rate) || 0, material_tax_rate: Number(settings?.material_tax_rate) || 0,
-          notes: '', internal_notes: '', date: today, due_date: kind === 'invoice' ? addDaysISO(today, 14) : null,
+          notes: '', internal_notes: '', options: [], upgrades: [], selections: [], date: today, due_date: kind === 'invoice' ? addDaysISO(today, 14) : null,
         }}
       />
     </>

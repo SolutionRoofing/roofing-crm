@@ -6,7 +6,9 @@ import { redirect } from 'next/navigation';
 import { isAdmin, requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { isoDate, number, oneOf, text, uuid } from '@/lib/form';
-import { cleanLines, docTotals, isItem, PAYMENT_METHODS, type Line } from '@/lib/documents';
+import {
+  cleanLines, cleanOptions, cleanSelections, cleanUpgrades, docTotals, isItem, PAYMENT_METHODS, type EstOption, type Line,
+} from '@/lib/documents';
 import { addDaysISO, todayISO } from '@/lib/format';
 import type { FormState } from '@/app/login/actions';
 import { emailConfigured, processOutbox, siteUrl } from '@/lib/email/send';
@@ -27,18 +29,41 @@ export async function saveDocument(_prev: FormState, fd: FormData): Promise<Form
   const id = uuid(fd, 'id');
   const kind = oneOf(fd, 'kind', ['estimate', 'invoice'] as const, 'estimate');
   const jobId = uuid(fd, 'job_id');
-  let items;
-  try { items = cleanLines(JSON.parse(text(fd, 'items', 200000) || '[]')); } catch { return { error: 'The line items could not be read.' }; }
+  let items: Line[];
+  let options: EstOption[] = [];
+  const json = (k: string) => JSON.parse(text(fd, k, 600000) || '[]');
+  try {
+    items = cleanLines(json('items'));
+    if (kind === 'estimate') options = cleanOptions(json('options'));
+  } catch { return { error: 'The line items could not be read.' }; }
+  if (options.length === 1) options = [];
+  if (options.length) {
+    const empty = options.find(o => !o.items.some(isItem));
+    if (empty) return { error: `The "${empty.name}" option has no line items. Add some or remove the option.` };
+    items = options[0].items;
+  }
   if (!items.some(isItem)) return { error: 'Add at least one line item.' };
+  let upgrades: ReturnType<typeof cleanUpgrades> = [];
+  let selections: ReturnType<typeof cleanSelections> = [];
+  try {
+    upgrades = kind === 'estimate' ? cleanUpgrades(JSON.parse(text(fd, 'upgrades', 50000) || '[]')) : [];
+    selections = kind === 'estimate' ? cleanSelections(JSON.parse(text(fd, 'selections', 20000) || '[]')) : [];
+  } catch { return { error: 'The upgrades or selections could not be read.' }; }
   const taxRate = number(fd, 'tax_rate');
   if (taxRate < 0 || taxRate > 25) return { error: 'Sales tax should be between 0 and 25%.' };
   const materialTax = number(fd, 'material_tax_rate');
   if (materialTax < 0 || materialTax > 25) return { error: 'Material tax should be between 0 and 25%.' };
 
   const supabase = await createClient();
-  items = await saveNewProducts(supabase, items, isAdmin(me));
+  // New products picked in any option go to the price list once.
+  if (options.length) {
+    options = await Promise.all(options.map(async o => ({ ...o, items: await saveNewProducts(supabase, o.items, isAdmin(me)) })));
+    items = options[0].items;
+  } else {
+    items = await saveNewProducts(supabase, items, isAdmin(me));
+  }
   const fields = {
-    items, tax_rate: taxRate, material_tax_rate: materialTax, notes: text(fd, 'notes', 4000), internal_notes: text(fd, 'internal_notes', 4000),
+    items, options, upgrades, selections, tax_rate: taxRate, material_tax_rate: materialTax, notes: text(fd, 'notes', 4000), internal_notes: text(fd, 'internal_notes', 4000),
     date: isoDate(fd, 'date') ?? todayISO(),
     due_date: kind === 'invoice' ? isoDate(fd, 'due_date') : null,
   };
@@ -93,14 +118,21 @@ const strip = (l: Line): Line => {
 };
 
 /** "Save as template" from the editor: keeps the lines and customer note under a name. */
-export async function saveEstimateTemplate(name: string, rawItems: unknown, notes: string): Promise<FormState> {
+export async function saveEstimateTemplate(name: string, payload: {
+  items: unknown; notes: unknown; options?: unknown; upgrades?: unknown; selections?: unknown;
+}): Promise<FormState> {
   await requireUser([...STAFF]);
   const clean = String(name ?? '').trim().slice(0, 120);
   if (!clean) return { error: 'Give the template a name.' };
-  const items = cleanLines(rawItems).map(strip);
+  let options = cleanOptions(payload?.options).map(o => ({ ...o, items: o.items.map(strip) }));
+  if (options.length === 1) options = [];
+  const items = (options.length ? options[0].items : cleanLines(payload?.items)).map(strip);
   if (!items.some(isItem)) return { error: 'Add at least one line item first.' };
   const supabase = await createClient();
-  const { error } = await supabase.from('estimate_templates').insert({ name: clean, items, notes: String(notes ?? '').slice(0, 4000) });
+  const { error } = await supabase.from('estimate_templates').insert({
+    name: clean, items, options, upgrades: cleanUpgrades(payload?.upgrades), selections: cleanSelections(payload?.selections),
+    notes: String(payload?.notes ?? '').slice(0, 4000),
+  });
   if (error) return { error: error.message };
   revalidatePath('/documents/new');
   revalidatePath('/settings');
@@ -124,11 +156,14 @@ export async function duplicateDocument(fd: FormData) {
   if (!id) return;
   const supabase = await createClient();
   const { data: d, error } = await supabase.from('documents')
-    .select('kind, job_id, items, tax_rate, material_tax_rate, notes, internal_notes').eq('id', id).single();
+    .select('kind, job_id, items, options, upgrades, selections, signed_at, tax_rate, material_tax_rate, notes, internal_notes').eq('id', id).single();
   if (error) throw new Error(error.message);
   const today = todayISO();
   const { data: copy, error: e2 } = await supabase.from('documents').insert({
+    // A signed estimate's items are the customer's pick; copy that, not the original choices.
     kind: d.kind, job_id: d.job_id, items: d.items, tax_rate: d.tax_rate, material_tax_rate: d.material_tax_rate,
+    options: d.signed_at ? [] : d.options, upgrades: d.signed_at ? [] : d.upgrades,
+    selections: (d.selections as { label: string }[]).map(q => ({ label: q.label, value: d.signed_at ? (q as { value?: string }).value ?? '' : '' })),
     notes: d.notes, internal_notes: d.internal_notes, status: 'draft', date: today,
     due_date: d.kind === 'invoice' ? addDaysISO(today, 14) : null,
   }).select('id').single();
@@ -275,8 +310,16 @@ export async function signShared(_prev: FormState, fd: FormData): Promise<FormSt
   if (!signature) return { error: 'Please sign in the box with your finger or mouse.' };
   const h = await headers();
   const ip = (h.get('x-forwarded-for') ?? '').split(',')[0].trim() || h.get('x-real-ip') || '';
+  // Which option they picked, which upgrades they ticked, and their answers (e.g. shingle color).
+  const optRaw = String(fd.get('option') ?? '');
+  const option = /^\d{1,2}$/.test(optRaw) ? Number(optRaw) : null;
+  const upgrades = fd.getAll('upgrade').map(String).filter(v => /^\d{1,2}$/.test(v)).map(Number);
+  const answers = fd.getAll('answer').map(v => String(v).trim().slice(0, 200)).slice(0, 6);
   const supabase = await createClient();
-  const { error } = await supabase.rpc('sign_document', { p_token: token, p_name: name, p_signature: signature, p_ip: ip });
+  const { error } = await supabase.rpc('sign_document', {
+    p_token: token, p_name: name, p_signature: signature, p_ip: ip,
+    p_option: option, p_upgrades: upgrades.length ? upgrades : null, p_answers: answers,
+  });
   if (error) return { error: error.message };
   revalidatePath(`/e/${token}`);
   return { ok: 'signed' };

@@ -24,7 +24,7 @@ export type ItemLine = {
   /** Editor only: add this line to the price list when the estimate is saved. */
   save?: boolean;
 };
-export type SectionDisplay = 'items' | 'no_prices' | 'total';
+export type SectionDisplay = 'items' | 'no_prices' | 'total' | 'hidden';
 export type SectionLine = { type: 'section'; title: string; display: SectionDisplay; show_total: boolean };
 export type Line = ItemLine | SectionLine;
 
@@ -34,12 +34,21 @@ export type CatalogItem = {
   id: string; name: string; description: string; unit: string; price: number;
   material_cost: number; labor_cost: number; markup: number; category: string;
 };
-export type EstimateTemplate = { id: string; name: string; items: Line[]; notes: string };
+/** One choice on the estimate (Good / Better / Best, Repair…). */
+export type EstOption = { name: string; items: Line[] };
+/** Extra the customer can tick when signing. */
+export type Upgrade = { name: string; desc: string; price: number };
+/** Question the customer answers when signing, e.g. Shingle color. */
+export type Selection = { label: string; value: string };
+export type EstimateTemplate = {
+  id: string; name: string; items: Line[]; notes: string; options: EstOption[]; upgrades: Upgrade[]; selections: Selection[];
+};
 
 export const SECTION_DISPLAYS: { value: SectionDisplay; label: string }[] = [
   { value: 'items', label: 'Show line items' },
   { value: 'no_prices', label: 'Show items, hide prices' },
   { value: 'total', label: 'Show section total only' },
+  { value: 'hidden', label: 'Hide (add into the package line)' },
 ];
 
 export const cents = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
@@ -188,4 +197,55 @@ export function cleanLines(raw: unknown): Line[] {
       ...(l.save === true ? { save: true } : {}),
     }];
   });
+}
+
+const clipStr = (v: unknown, n: number) => String(v ?? '').trim().slice(0, n);
+
+export function normalizeOptions(raw: unknown): EstOption[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((o, i) => ({ name: clipStr((o as EstOption)?.name, 60) || `Option ${i + 1}`, items: normalizeLines((o as EstOption)?.items) }));
+}
+export function cleanOptions(raw: unknown): EstOption[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 6).map((o, i) => ({ name: clipStr((o as EstOption)?.name, 60) || `Option ${i + 1}`, items: cleanLines((o as EstOption)?.items) }));
+}
+export function cleanUpgrades(raw: unknown): Upgrade[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 20).flatMap(u => {
+    const r = (u ?? {}) as Record<string, unknown>;
+    const name = clipStr(r.name, 160);
+    return name ? [{ name, desc: clipStr(r.desc, 1000), price: Math.max(0, cents(num(r.price))) }] : [];
+  });
+}
+export function cleanSelections(raw: unknown): Selection[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 6).flatMap(q => {
+    const r = (q ?? {}) as Record<string, unknown>;
+    const label = clipStr(r.label, 80);
+    return label ? [{ label, value: clipStr(r.value, 200) }] : [];
+  });
+}
+
+/**
+ * The lines as the customer sees them: sections marked "hidden" disappear and their total is added
+ * to the first visible line (the package line). Mirrors private.customer_items in the database.
+ */
+export function customerLines(items: Line[]): Line[] {
+  const out: Line[] = [];
+  let hidden = false;
+  let hiddenTotal = 0;
+  let first = -1;
+  for (const l of items) {
+    if (isSection(l)) { hidden = l.display === 'hidden'; if (!hidden) out.push(l); continue; }
+    if (hidden) { hiddenTotal += lineAmount(l); continue; }
+    out.push(l);
+    if (first < 0) first = out.length - 1;
+  }
+  hiddenTotal = cents(hiddenTotal);
+  if (!hiddenTotal) return out;
+  if (first < 0) return [...out, { name: 'Roofing project', desc: '', unit: 'EA', qty: 1, mat: 0, lab: 0, markup: 0, price: hiddenTotal }];
+  const pkg = out[first] as ItemLine;
+  const qty = num(pkg.qty) || 1;
+  out[first] = { ...pkg, qty, price: cents((num(pkg.price) * qty + hiddenTotal) / qty) };
+  return out;
 }

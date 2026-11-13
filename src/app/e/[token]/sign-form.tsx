@@ -3,9 +3,13 @@
 import { useActionState, useEffect, useRef, useState } from 'react';
 import type { FormState } from '@/app/login/actions';
 import { signShared } from '@/app/(app)/documents/actions';
+import type { Selection } from '@/lib/documents';
 
 /** Typed name + drawn signature + "I accept" box. Works with a finger on phones. */
-export function SignForm({ token, defaultName, total }: { token: string; defaultName: string; total: string }) {
+export function SignForm({ token, defaultName, total, option = null, optionName = '', upgrades = [], selections = [] }: {
+  token: string; defaultName: string; total: string;
+  option?: number | null; optionName?: string; upgrades?: number[]; selections?: Selection[];
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(signShared, {});
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [signature, setSignature] = useState('');
@@ -71,10 +75,21 @@ export function SignForm({ token, defaultName, total }: { token: string; default
   return (
     <form action={action} className="panel sign-panel">
       <h2>Accept this estimate</h2>
-      <p className="muted" style={{ margin: '4px 0 12px' }}>Total {total}. Sign below to approve the work and the terms above.</p>
+      <p className="muted" style={{ margin: '4px 0 12px' }}>
+        {optionName ? <><b>{optionName}</b>{upgrades.length ? ` + ${upgrades.length} upgrade${upgrades.length === 1 ? '' : 's'}` : ''} · </> : null}
+        Total {total}. Sign below to approve the work and the terms above.
+      </p>
       {state.error && <p className="form-error" role="alert" style={{ marginBottom: 10 }}>{state.error}</p>}
       <input type="hidden" name="token" value={token} />
       <input type="hidden" name="signature" value={signature} />
+      {option !== null && <input type="hidden" name="option" value={option} />}
+      {upgrades.map(u => <input key={u} type="hidden" name="upgrade" value={u} />)}
+      {selections.map((q, i) => (
+        <div className="field" key={i} style={{ marginBottom: 10 }}>
+          <label htmlFor={`sel-${i}`}>{q.label}</label>
+          <input id={`sel-${i}`} name="answer" defaultValue={q.value} />
+        </div>
+      ))}
       <div className="field">
         <label htmlFor="sign-name">Your full name</label>
         <input id="sign-name" name="name" defaultValue={defaultName} autoComplete="name" required />
