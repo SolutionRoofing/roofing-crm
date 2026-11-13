@@ -228,7 +228,8 @@ export function cleanSelections(raw: unknown): Selection[] {
 
 /**
  * The lines as the customer sees them: sections marked "hidden" disappear and their total is added
- * to the first visible line (the package line). Mirrors private.customer_items in the database.
+ * to the first visible line (the package line); other zero-quantity lines ("only if needed" extras
+ * that weren't needed) are left out. Mirrors private.customer_items in the database.
  */
 export function customerLines(items: Line[]): Line[] {
   const out: Line[] = [];
@@ -238,6 +239,7 @@ export function customerLines(items: Line[]): Line[] {
   for (const l of items) {
     if (isSection(l)) { hidden = l.display === 'hidden'; if (!hidden) out.push(l); continue; }
     if (hidden) { hiddenTotal += lineAmount(l); continue; }
+    if (first >= 0 && !num(l.qty)) continue;
     out.push(l);
     if (first < 0) first = out.length - 1;
   }

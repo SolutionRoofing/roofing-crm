@@ -121,8 +121,8 @@ function Group({ g }: { g: LineGroup }) {
           <td className="sheet-item">{l.name}</td>
           <td className="sheet-desc">{l.desc}</td>
           <td className="r">{qtyText(l)}</td>
-          <td className="r">{display === 'items' ? moneyCents(l.price) : ''}</td>
-          <td className="r">{display === 'items' ? moneyCents(lineAmount(l)) : ''}</td>
+          <td className="r">{display !== 'items' ? '' : Number(l.price) ? moneyCents(l.price) : ''}</td>
+          <td className="r">{display !== 'items' ? '' : Number(l.price) ? moneyCents(lineAmount(l)) : <span className="muted">Included</span>}</td>
         </tr>
       ))}
       {showTotal && display !== 'total' && (

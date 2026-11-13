@@ -83,4 +83,6 @@ test('customer view folds hidden sections into the package line (matches the dat
   assert.deepEqual([out[0].qty, out[0].price], [1, 6300]);
   assert.equal(docTotals(out, 0).total, docTotals(items, 0).total, 'same total either way');
   assert.equal(customerLines([items[1], items[2]])[0].name, 'Roofing project', 'no visible line: a package line is added');
+  const withUnused = [...items, { name: 'Sheathing', desc: 'only if needed', unit: 'EA', qty: 0, mat: 0, lab: 0, markup: 0, price: 75 }];
+  assert.equal(customerLines(withUnused).length, 3, 'zero-quantity extras are left out');
 });
