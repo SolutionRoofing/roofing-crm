@@ -148,7 +148,7 @@
 .service-field { border: 0; padding: 0; margin: 0; min-width: 0; }
 .service-field legend { font-size: 13px; font-weight: 600; margin-bottom: 6px; padding: 0; }
 .service-checks { display: flex; flex-wrap: wrap; gap: 8px; }
-.field .service-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); font-weight: 600; font-size: 13px; cursor: pointer; }
+.field .service-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--surface); font-weight: 600; font-size: 13px; cursor: pointer; }
 .field .service-check:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
 .field .service-check input { width: 16px; height: 16px; padding: 0; accent-color: var(--accent); }
 
