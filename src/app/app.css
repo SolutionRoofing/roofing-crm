@@ -31,7 +31,8 @@
 .inline-form select, .inline-form input { padding: 6px 8px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--surface); min-height: 32px; }
 .stage-counts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 /* Phase 2 screens */
-.card.link-card { cursor: default; padding: 0; }
+.card.link-card { cursor: grab; padding: 0; }
+.card.link-card:active { cursor: grabbing; }
 .card-link { display: block; padding: 9px 11px 4px; color: var(--ink); }
 .card-link:hover { text-decoration: none; }
 .stage-pick.compact { display: block; padding: 0 8px 8px; }
