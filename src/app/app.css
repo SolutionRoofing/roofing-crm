@@ -169,3 +169,6 @@
 .share-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 0; font-size: 13px; flex-wrap: wrap; }
 .good-text { color: var(--good); font-weight: 600; }
 .share-message { margin-top: 10px; padding: 10px 12px; background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 6px; white-space: pre-line; }
+/* The open share box sits in the Photos header; give it its own full-width row. */
+.panel-head:has(> .share-box) { flex-wrap: wrap; }
+.panel-head > .share-box { flex-basis: 100%; margin: 8px 0 0; }
