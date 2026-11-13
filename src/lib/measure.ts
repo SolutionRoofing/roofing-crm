@@ -17,6 +17,8 @@ export type Measurements = {
   valleys: number;
   step: number;          // step flashing, LF
   wall: number;          // headwall / roof-to-wall flashing, LF
+  chimney: number;       // flashing around chimneys, LF
+  chimneys: number;      // chimneys, each
   pipes: number;         // pipe jacks, each
   layers: number;        // existing layers to tear off
   source: string;        // e.g. "GAF QuickMeasure"
@@ -35,13 +37,15 @@ export const MEASURE_FIELDS: { key: keyof Measurements; label: string; unit: str
   { key: 'valleys', label: 'Valleys', unit: 'LF' },
   { key: 'step', label: 'Step flashing', unit: 'LF' },
   { key: 'wall', label: 'Wall / headwall flashing', unit: 'LF' },
+  { key: 'chimney', label: 'Around chimneys', unit: 'LF' },
+  { key: 'chimneys', label: 'Chimneys', unit: 'ea' },
   { key: 'pipes', label: 'Pipe jacks', unit: 'ea' },
   { key: 'layers', label: 'Layers to tear off', unit: '' },
 ];
 
 export const EMPTY_MEASUREMENTS: Measurements = {
   area_sqft: 0, waste_pct: 0, pitch: 0, low_sq: 0, steep_sq: 0, eaves: 0, rakes: 0, ridges: 0, hips: 0,
-  valleys: 0, step: 0, wall: 0, pipes: 0, layers: 1, source: '',
+  valleys: 0, step: 0, wall: 0, chimney: 0, chimneys: 0, pipes: 0, layers: 1, source: '',
 };
 
 const n = (v: unknown) => (Number.isFinite(Number(v)) ? Math.max(0, Number(v)) : 0);
@@ -63,7 +67,7 @@ export const hasMeasurements = (m: Measurements | null | undefined) => !!m && m.
  *   steep_sq  sq at 10/12+    low_sq  flat–2/12   mid_sq  the rest (sq − steep − low)
  *   pitch_* : squares in each labor band, using the predominant pitch for the "mid" area:
  *   p_low (flat–3/12), p_4_6, p_7_9, p_10_12
- *   eaves rakes ridges hips valleys step wall pipes layers
+ *   eaves rakes ridges hips valleys step wall chimney chimneys pipes layers
  */
 export function formulaVars(m: Measurements): Record<string, number> {
   const sq = m.area_sqft / 100;
@@ -78,7 +82,7 @@ export function formulaVars(m: Measurements): Record<string, number> {
     p_7_9: p > 6 && p <= 9 ? mid : 0,
     p_10_12: steep + (p > 9 ? mid : 0),
     eaves: m.eaves, rakes: m.rakes, ridges: m.ridges, hips: m.hips, valleys: m.valleys,
-    step: m.step, wall: m.wall, pipes: m.pipes, layers: m.layers,
+    step: m.step, wall: m.wall, chimney: m.chimney, chimneys: m.chimneys, pipes: m.pipes, layers: m.layers,
   };
 }
 

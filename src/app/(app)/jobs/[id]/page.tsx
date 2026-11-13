@@ -171,7 +171,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
         </section>
       </div>
 
-      <MeasurementsPanel key={`m-${job.updated_at}`} jobId={job.id} raw={job.measurements} />
+      <MeasurementsPanel key={`m-${job.updated_at}`} jobId={job.id} raw={job.measurements} address={address} />
 
       {job.type === 'Insurance' && <Claim key={job.updated_at} jobId={job.id} ins={ins} />}
 

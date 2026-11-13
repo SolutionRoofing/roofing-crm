@@ -1,11 +1,12 @@
 import { SubmitButton } from '@/components/client';
 import { saveMeasurements } from '@/app/(app)/jobs/actions';
+import { GafImport } from '@/components/gaf-import';
 import { cleanMeasurements, hasMeasurements, MEASURE_FIELDS } from '@/lib/measure';
 
 const SOURCES = ['GAF QuickMeasure', 'HOVER', 'Roofr', 'EagleView', 'Measured by hand', 'Other'];
 
 /** Job page: the numbers from the measurement report. They size estimates with one click. */
-export function MeasurementsPanel({ jobId, raw }: { jobId: string; raw: unknown }) {
+export function MeasurementsPanel({ jobId, raw, address }: { jobId: string; raw: unknown; address?: string }) {
   const m = cleanMeasurements(raw);
   const has = hasMeasurements(m);
   const sq = m.area_sqft / 100;
@@ -19,9 +20,10 @@ export function MeasurementsPanel({ jobId, raw }: { jobId: string; raw: unknown 
           </span>
         )}
       </div>
+      <GafImport formId={`measure-${jobId}`} jobAddress={address} />
       <details open={!has}>
-        <summary className="link-btn">{has ? 'Edit measurements' : 'Enter the numbers from the measurement report'}</summary>
-        <form action={saveMeasurements} className="measure-form">
+        <summary className="link-btn">{has ? 'Edit measurements' : 'Or type in the numbers from the measurement report'}</summary>
+        <form action={saveMeasurements} className="measure-form" id={`measure-${jobId}`}>
           <input type="hidden" name="id" value={jobId} />
           <div className="field">
             <label htmlFor="m-source">Report</label>

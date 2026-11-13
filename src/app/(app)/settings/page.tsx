@@ -70,7 +70,7 @@ async function Settings() {
             <p className="muted">
               &quot;Fill quantities from measurements&quot; in an estimate uses these. Names you can use: <code>sq</code> (roof area in squares),{' '}
               <code>waste</code> (0.14 for 14%), <code>low_sq</code>, <code>steep_sq</code>, <code>eaves</code>, <code>rakes</code>, <code>ridges</code>,{' '}
-              <code>hips</code>, <code>valleys</code>, <code>step</code>, <code>wall</code> (all in feet), <code>pipes</code>, <code>layers</code>, and labor bands{' '}
+              <code>hips</code>, <code>valleys</code>, <code>step</code>, <code>wall</code>, <code>chimney</code> (all in feet), <code>chimneys</code>, <code>pipes</code>, <code>layers</code>, and labor bands{' '}
               <code>p_low</code>, <code>p_4_6</code>, <code>p_7_9</code>, <code>p_10_12</code> (squares). Math: + − × ÷ ( ) and <code>ceil</code>, <code>round</code>,{' '}
               <code>min</code>, <code>max</code>. Leave it empty for items the rep counts by hand.
             </p>

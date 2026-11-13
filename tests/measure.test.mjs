@@ -10,7 +10,7 @@ export const F = {
   hipRidge: 'ceil((hips + ridges) / 30)',
   starter: 'ceil((eaves + rakes) / 116)',
   underlayment: 'ceil((sq - low_sq) / 10)',
-  iceWater: 'ceil((eaves + valleys + step + wall) * 3 * 1.1 / 195)',
+  iceWater: 'ceil((eaves + valleys + step + wall + chimney) * 3 * 1.1 / 195)',
   ridgeVent: 'ceil(ridges / 28)',
   dripEdge: 'ceil(rakes * 1.1 / 10)',
   apron: 'ceil(eaves * 1.1 / 10)',

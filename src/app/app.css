@@ -487,3 +487,5 @@
 @media (max-width: 1000px) { .tpl-editor { grid-template-columns: minmax(0, 1fr); } .tpl-preview { position: static; } }
 @media (max-width: 860px) { .mail-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .tpl-form { grid-template-columns: minmax(0, 1fr); } .tpl-uses { display: none; } .camp-stats b { font-size: 16px; } }
+.gaf-import { display: grid; gap: 6px; justify-items: start; margin-bottom: 10px; }
+.gaf-import p { margin: 0; font-size: 13px; }
