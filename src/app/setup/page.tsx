@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Icon } from '@/components/icon';
+import { Logo } from '@/components/logo';
 
 export const metadata: Metadata = { title: 'Connect Supabase' };
 
@@ -8,7 +8,7 @@ export default function SetupPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="brand"><span className="brand-mark" style={{ color: '#fff' }}><Icon name="roof" /></span>Roofing CRM</div>
+        <div className="auth-logo"><Logo height={120} /></div>
         <h1>Almost there</h1>
         <p className="muted" style={{ marginTop: 8 }}>
           The app isn&apos;t connected to its database yet. Copy <code>.env.example</code> to <code>.env.local</code>,

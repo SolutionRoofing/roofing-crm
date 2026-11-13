@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { PublicBar, PublicFoot } from '@/components/public-brand';
 import { CustomerGallery, type SharedPhoto } from './gallery';
 
 // Customer-facing photo page: no login. The token is checked by get_shared_photos, which only
@@ -60,11 +61,10 @@ async function Photos({ params }: { params: PageProps<'/p/[token]'>['params'] })
 
   return (
     <>
-      <div className="public-bar">
-        <span>{d.company.company}{d.company.phone ? ` · ${d.company.phone}` : ''}</span>
-      </div>
+      <PublicBar company={d.company} />
       <section className="panel">
-        <h1>Your project photos</h1>
+        <p className="eyebrow">{d.customer.first ? `For ${d.customer.first}` : 'Your project'}</p>
+        <h1 style={{ marginTop: 4 }}>Your project photos</h1>
         <p className="muted" style={{ marginTop: 4 }}>
           {place ? `${place} · ` : ''}{photos.length} photo{photos.length === 1 ? '' : 's'}
         </p>
@@ -77,6 +77,7 @@ async function Photos({ params }: { params: PageProps<'/p/[token]'>['params'] })
           {!d.company.phone && !d.company.email ? `Contact ${d.company.company || 'us'}.` : '.'}
         </p>
       </section>
+      <PublicFoot company={d.company} />
     </>
   );
 }

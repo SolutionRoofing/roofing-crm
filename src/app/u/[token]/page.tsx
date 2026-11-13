@@ -4,6 +4,7 @@ import { connection } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from '@/lib/env';
+import { Logo } from '@/components/logo';
 
 // Unsubscribe page linked from every marketing email. No login; the token is checked in the database.
 export const metadata: Metadata = { title: 'Unsubscribe', robots: { index: false, follow: false } };
@@ -21,6 +22,7 @@ export default function UnsubscribePage({ params }: PageProps<'/u/[token]'>) {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <div className="auth-logo"><Logo height={110} /></div>
         <Suspense fallback={<p className="muted">Loading…</p>}>
           <Body params={params} />
         </Suspense>

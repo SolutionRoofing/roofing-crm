@@ -1,4 +1,4 @@
-# Setting up the Roofing CRM
+# Setting up the Solution Roofing app
 
 This walks through connecting the app to Supabase (its database, logins and photo storage) and running it on this PC. Hosting on Vercel and sending email through Resend come later. Each step says who does it.
 

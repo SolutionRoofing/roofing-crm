@@ -1,4 +1,4 @@
-# Roofing CRM (multi-user)
+# Solution Roofing team app (multi-user)
 
 The shared version of the roofing CRM prototype. It runs on Next.js, uses Supabase for Postgres, logins and photo storage, and will be hosted on Vercel.
 

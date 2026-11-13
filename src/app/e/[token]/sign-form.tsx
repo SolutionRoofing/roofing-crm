@@ -62,7 +62,7 @@ export function SignForm({ token, defaultName, total }: { token: string; default
   if (state.ok === 'signed') {
     return (
       <div className="panel sign-panel" role="status">
-        <h2>Thank you!</h2>
+        <h2>Thank you.</h2>
         <p style={{ marginTop: 6 }}>Your signed estimate has been sent to us. We&apos;ll be in touch shortly to schedule your project.</p>
       </div>
     );

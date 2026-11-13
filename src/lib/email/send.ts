@@ -84,7 +84,7 @@ export async function processOutbox(limit = 50) {
         estimate_total: amount ? money(amount) : '', review_link: company.review_url || '',
       };
       const unsubscribeUrl = c?.unsubscribe_token ? `${siteUrl()}/u/${c.unsubscribe_token}` : undefined;
-      const email = buildEmail({ subject: row.subject, body: row.body, kind: row.kind, data, company, unsubscribeUrl });
+      const email = buildEmail({ subject: row.subject, body: row.body, kind: row.kind, data, company, unsubscribeUrl, logoUrl: `${siteUrl()}/brand/sr-logo-email.png` });
       const headers: Record<string, string> = {};
       if (row.kind === 'marketing' && unsubscribeUrl) {
         // One-click unsubscribe for Gmail/Yahoo (RFC 8058).

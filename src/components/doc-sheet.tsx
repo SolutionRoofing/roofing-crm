@@ -1,6 +1,7 @@
 // The printable estimate / invoice. Used on the staff document page and the customer link.
 import { docLabel, docTotals, type Line } from '@/lib/documents';
 import { fmtDay, fullAddress, fullName, moneyCents } from '@/lib/format';
+import { Logo } from './logo';
 
 export type SheetData = {
   kind: string;
@@ -25,10 +26,13 @@ export function DocSheet({ d, signature }: { d: SheetData; signature?: string | 
   return (
     <article className="sheet">
       <header className="sheet-head">
-        <div>
+        <div className="sheet-brand">
+          <Logo height={88} />
+          <div>
           <h2>{d.company.company}</h2>
           <p className="muted">{[d.company.address, d.company.phone, d.company.email].filter(Boolean).join(' · ')}</p>
           {d.company.license && <p className="muted">License #{d.company.license}</p>}
+          </div>
         </div>
         <div className="sheet-id">
           <b>{isInvoice ? 'INVOICE' : 'ESTIMATE'}</b>

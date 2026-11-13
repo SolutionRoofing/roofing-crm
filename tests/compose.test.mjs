@@ -33,5 +33,5 @@ test('customer data cannot inject HTML or headers', () => {
 test('links in text become clickable, paragraphs preserved', () => {
   const h = textToHtml('Line one\nline two\n\nSee https://example.com/review');
   assert.match(h, /Line one<br>line two/);
-  assert.match(h, /<a href="https:\/\/example\.com\/review">/);
+  assert.match(h, /<a href="https:\/\/example\.com\/review"[^>]*>/);
 });

@@ -16,7 +16,7 @@ export default function JobsPage({ searchParams }: PageProps<'/jobs'>) {
     <>
       <div className="page-head">
         <h1>Jobs</h1>
-        <Link className="btn primary" href="/jobs/new"><Icon name="plus" size={16} /> New lead</Link>
+        <Link className="btn cta" href="/jobs/new"><Icon name="plus" size={16} /> New lead</Link>
       </div>
       <Suspense fallback={<div className="panel muted">Loading…</div>}>
         <JobList searchParams={searchParams} />

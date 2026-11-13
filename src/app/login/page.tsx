@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { Icon } from '@/components/icon';
+import { Logo, Tagline } from '@/components/logo';
 import { safeNext } from '@/lib/safe-next';
 import { LoginForm } from './login-form';
 
@@ -15,13 +15,14 @@ export default function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="brand"><span className="brand-mark" style={{ color: '#fff' }}><Icon name="roof" /></span>Roofing CRM</div>
+        <div className="auth-logo"><Logo height={120} /></div>
         <h1>Sign in</h1>
         <p className="muted">Use the email your office invited you with.</p>
         <Suspense fallback={null}>
           <Form searchParams={searchParams} />
         </Suspense>
       </div>
+      <Tagline className="auth-tagline" />
     </div>
   );
 }

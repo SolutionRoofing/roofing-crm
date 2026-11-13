@@ -7,6 +7,7 @@ import { docTotals } from '@/lib/documents';
 import { fullName, moneyCents } from '@/lib/format';
 import { SignForm } from './sign-form';
 import { PrintButton } from '@/app/(app)/documents/doc-client';
+import { PublicBar, PublicFoot } from '@/components/public-brand';
 
 // Customer-facing page: no login. Everything goes through the token-checked database function.
 export const metadata: Metadata = { title: 'Your document', robots: { index: false, follow: false } };
@@ -42,14 +43,11 @@ async function Shared({ params }: { params: PageProps<'/e/[token]'>['params'] })
 
   return (
     <>
-      <div className="public-bar no-print">
-        <span>{d.company.company}{d.company.phone ? ` · ${d.company.phone}` : ''}</span>
-        <PrintButton />
-      </div>
+      <PublicBar company={d.company}><PrintButton /></PublicBar>
       <DocSheet d={d} />
       {d.kind === 'estimate' && d.signed_at && (
         <div className="panel sign-panel no-print" role="status">
-          <h2>Thank you, {d.signed_name}!</h2>
+          <h2>Thank you, {d.signed_name}.</h2>
           <p style={{ marginTop: 6 }}>
             Your signed estimate is with {d.company.company}. We&apos;ll be in touch to schedule your project.
             {d.company.phone ? ` Questions? Call ${d.company.phone}.` : ''}
@@ -60,6 +58,7 @@ async function Shared({ params }: { params: PageProps<'/e/[token]'>['params'] })
       {d.kind === 'estimate' && d.status === 'declined' && (
         <p className="panel muted no-print">This estimate was marked declined. Contact us if you&apos;d like to revisit it.</p>
       )}
+      <PublicFoot company={d.company} />
     </>
   );
 }

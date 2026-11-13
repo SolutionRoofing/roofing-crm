@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { Icon } from '@/components/icon';
+import { Logo } from '@/components/logo';
 import { LiveRefresh } from '@/components/client';
 import { getCurrentUser, ROLE_LABELS } from '@/lib/auth';
 import { signOut } from '@/app/login/actions';
@@ -42,13 +42,13 @@ export default function AppLayout({ children }: LayoutProps<'/'>) {
   return (
     <div className="app">
       <aside className="side">
-        <Link className="brand" href="/"><span className="brand-mark"><Icon name="roof" /></span>Roofing CRM</Link>
+        <Link className="brand-band" href="/" aria-label="Solution Roofing home"><Logo height={104} /></Link>
         <nav id="sideNav" aria-label="Main"><Suspense fallback={null}><SideNav /></Suspense></nav>
         <Suspense fallback={null}><UserBox /></Suspense>
       </aside>
       <div className="main-wrap">
         <div className="mobile-top">
-          <span>Roofing CRM</span>
+          <Link href="/" aria-label="Solution Roofing home"><Logo height={60} /></Link>
           <form action={signOut}><button>Sign out</button></form>
         </div>
         <main id="view">{children}</main>

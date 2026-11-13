@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { Icon } from '@/components/icon';
+import { Logo } from '@/components/logo';
 import { getCurrentUser } from '@/lib/auth';
 import { PasswordForm } from './password-form';
 
@@ -11,7 +11,7 @@ export default function PasswordPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="brand"><span className="brand-mark" style={{ color: '#fff' }}><Icon name="roof" /></span>Roofing CRM</div>
+        <div className="auth-logo"><Logo height={120} /></div>
         <h1>Choose a password</h1>
         <Suspense fallback={<p className="muted">Loading…</p>}>
           <SignedIn />

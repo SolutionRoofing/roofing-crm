@@ -25,9 +25,8 @@ async function Dashboard() {
   const supabase = await createClient();
   const today = todayISO();
   const monthStart = `${today.slice(0, 7)}-01`;
-  const [{ data: jobsData, error }, { data: settings }, { data: tasksData }, { data: eventsData }, { people, crews }] = await Promise.all([
+  const [{ data: jobsData, error }, { data: tasksData }, { data: eventsData }, { people, crews }] = await Promise.all([
     supabase.from('job_list').select(JOB_LIST_COLUMNS).returns<JobRow[]>(),
-    supabase.from('settings').select('company').maybeSingle(),
     supabase.from('tasks').select(TASK_COLUMNS).eq('done', false).eq('assignee_id', me.id).order('due', { nullsFirst: false }).limit(8),
     supabase.from('events').select(EVENT_COLUMNS).gte('date', today).lte('date', addDaysISO(today, 6)).order('date').order('time').limit(12),
     getPeople(),
@@ -50,8 +49,8 @@ async function Dashboard() {
   return (
     <>
       <div className="page-head">
-        <div><h1>Dashboard</h1><p className="muted">{settings?.company} · {fmtDay(today, { weekday: 'long', month: 'long', day: 'numeric' })}</p></div>
-        <Link className="btn primary" href="/jobs/new"><Icon name="plus" size={16} /> New lead</Link>
+        <div><p className="eyebrow">{fmtDay(today, { weekday: 'long', month: 'long', day: 'numeric' })}</p><h1 style={{ marginTop: 4 }}>Dashboard</h1></div>
+        <Link className="btn cta" href="/jobs/new"><Icon name="plus" size={16} /> New lead</Link>
       </div>
       <div className="tiles">
         <Link className="tile" href="/jobs?stage=open"><span className="tile-label">Open pipeline</span><span className="tile-value">{money(sum(open))}</span><span className="tile-sub">{open.length} open jobs</span></Link>
