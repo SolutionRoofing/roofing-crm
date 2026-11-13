@@ -4,14 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { prepare, queueAll, queueDelete, queuePut, uploadOne } from '@/lib/photo-queue';
 
-export const PHOTO_CATEGORIES = ['Before', 'Damage', 'During', 'After'] as const;
-
 type Item = { id: string; jobId: string; status: 'waiting' | 'uploading' | 'failed'; error?: string; preview?: string };
 
 /** "Add photos" button plus the upload queue for one job. */
 export function PhotoUploader({ jobId, userId }: { jobId: string; userId: string }) {
   const router = useRouter();
-  const [category, setCategory] = useState<string>('Before');
   const [items, setItems] = useState<Item[]>([]);
   const [preparing, setPreparing] = useState(0);
   const busy = useRef(false);
@@ -71,7 +68,7 @@ export function PhotoUploader({ jobId, userId }: { jobId: string; userId: string
     setPreparing(list.length);
     for (const f of list) {
       try {
-        await queuePut(await prepare(f, jobId, userId, category));
+        await queuePut(await prepare(f, jobId, userId));
       } catch {
         alert(`"${f.name}" could not be read as a photo. Try a JPEG or PNG.`);
       }
@@ -84,9 +81,6 @@ export function PhotoUploader({ jobId, userId }: { jobId: string; userId: string
   return (
     <div className="photo-upload">
       <div className="inline-form">
-        <select value={category} onChange={e => setCategory(e.target.value)} aria-label="Photo type">
-          {PHOTO_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-        </select>
         <label className="btn primary small file-btn">
           Take or add photos
           <input type="file" accept="image/*" multiple hidden onChange={e => { onFiles(e.target.files); e.target.value = ''; }} />

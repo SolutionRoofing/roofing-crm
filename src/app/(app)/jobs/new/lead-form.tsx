@@ -2,7 +2,9 @@
 
 import { useActionState, useState } from 'react';
 import type { FormState } from '@/app/login/actions';
-import { JOB_TYPES, LEAD_SOURCES, ROOF_TYPES } from '@/lib/options';
+import { AddressInput } from '@/components/address-input';
+import { ServiceFields } from '@/components/job-fields';
+import { LEAD_SOURCES, ROOF_TYPES } from '@/lib/options';
 import { createLead } from '../actions';
 
 type Option = { id: string; label: string };
@@ -32,7 +34,7 @@ export function LeadForm({ contacts, reps, defaultContact, defaultRep }: {
               <div className="field"><label htmlFor="last">Last name</label><input id="last" name="last" autoComplete="off" /></div>
               <div className="field"><label htmlFor="phone">Phone</label><input id="phone" name="phone" type="tel" /></div>
               <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" /></div>
-              <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="address">Street address</label><input id="address" name="address" /></div>
+              <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="address">Street address</label><AddressInput id="address" fill={{ city: 'city', st: 'st', zip: 'zip' }} /></div>
               <div className="field"><label htmlFor="city">City</label><input id="city" name="city" /></div>
               <div className="form-grid" style={{ gap: 8 }}>
                 <div className="field"><label htmlFor="st">State</label><input id="st" name="st" maxLength={2} /></div>
@@ -54,10 +56,7 @@ export function LeadForm({ contacts, reps, defaultContact, defaultRep }: {
       <section className="panel">
         <div className="panel-head"><h2>Job</h2></div>
         <div className="form-grid">
-          <div className="field">
-            <label htmlFor="type">Type</label>
-            <select id="type" name="type" defaultValue="Retail">{JOB_TYPES.map(t => <option key={t}>{t}</option>)}</select>
-          </div>
+          <ServiceFields />
           <div className="field">
             <label htmlFor="rep_id">Sales rep</label>
             <select id="rep_id" name="rep_id" defaultValue={defaultRep}>
@@ -67,15 +66,11 @@ export function LeadForm({ contacts, reps, defaultContact, defaultRep }: {
           </div>
           <div className="field" style={{ gridColumn: '1 / -1' }}>
             <label htmlFor="name">Job name</label>
-            <input id="name" name="name" placeholder="Leave blank for e.g. “Thompson Re-roof”" />
+            <input id="name" name="name" placeholder="Leave blank for e.g. “Thompson Roof replacement”" />
           </div>
           <div className="field">
             <label htmlFor="roof_type">Roof type</label>
             <select id="roof_type" name="roof_type" defaultValue="Asphalt shingle">{ROOF_TYPES.map(t => <option key={t}>{t}</option>)}</select>
-          </div>
-          <div className="form-grid" style={{ gap: 8 }}>
-            <div className="field"><label htmlFor="squares">Squares</label><input id="squares" name="squares" inputMode="decimal" /></div>
-            <div className="field"><label htmlFor="pitch">Pitch</label><input id="pitch" name="pitch" placeholder="6/12" /></div>
           </div>
         </div>
       </section>

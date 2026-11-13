@@ -3,5 +3,7 @@ export const LEAD_SOURCES = ['Door knocking', 'Referral', 'Website', 'Storm canv
 export const ROOF_TYPES = ['Asphalt shingle', 'Metal', 'Tile', 'Flat / TPO', 'Wood shake', 'Other'] as const;
 export const EVENT_TYPES = ['Inspection', 'Adjuster meeting', 'Install', 'Repair', 'Follow-up', 'Other'] as const;
 export const JOB_TYPES = ['Retail', 'Insurance'] as const;
+// What a job covers. Must match the list in supabase/migrations/0011_services.sql.
+export const SERVICES = ['Roof replacement', 'Roof repair', 'Gutters', 'Siding', 'Window/door replacement', 'Chimney repair'] as const;
 export const CLAIM_STATUSES = ['Not filed', 'Filed', 'In review', 'Approved', 'Denied', 'Supplement pending', 'Closed'] as const;
 export const LOST_REASONS = ['Went with a competitor', 'Price', 'Claim denied', 'No response', 'Not ready', 'Other'] as const;

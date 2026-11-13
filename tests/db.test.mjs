@@ -412,3 +412,12 @@ test('plan usage numbers: admins only', async () => {
   await assert.rejects(as(db, u.crewA, q => q.query(`select public.plan_usage()`)), /not allowed/);
   await assert.rejects(asAnon(db, q => q.query(`select public.plan_usage()`)), /permission denied/);
 });
+
+test('job services: only the standard list, shown in the job list', async () => {
+  await as(db, u.rep1, q => q.query(`update jobs set services = '{Gutters,Siding}' where id = $1`, [ids.job]));
+  const row = await as(db, u.rep1, q => one(q, `select services from job_list where id = $1`, [ids.job]));
+  assert.deepEqual(row.services, ['Gutters', 'Siding']);
+  await assert.rejects(
+    as(db, u.rep1, q => q.query(`update jobs set services = '{Pool cleaning}' where id = $1`, [ids.job])),
+    /jobs_services_check/);
+});

@@ -77,7 +77,7 @@ async function JobList({ searchParams }: { searchParams: PageProps<'/jobs'>['sea
             <tbody>
               {data.map(j => (
                 <tr key={j.id}>
-                  <td><Link href={`/jobs/${j.id}`}><b>#{j.number}</b> {j.name}</Link>{j.type === 'Insurance' && <> <span className="pill">Claim</span></>}</td>
+                  <td><Link href={`/jobs/${j.id}`}><b>#{j.number}</b> {j.name}</Link>{j.type === 'Insurance' && <> <span className="pill">Claim</span></>}{j.services?.length ? <small>{j.services.join(', ')}</small> : null}</td>
                   <td>{j.customer_name}<small>{j.address}</small></td>
                   <td><StageBadge stage={j.stage} /></td>
                   <td className="hide-sm">{j.rep_name || <span className="muted">Unassigned</span>}</td>

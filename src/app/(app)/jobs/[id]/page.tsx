@@ -11,7 +11,8 @@ import { isUuid } from '@/lib/form';
 import { StageBadge } from '@/lib/jobs';
 import { getPeople, personName } from '@/lib/staff';
 import { daysSince, fmtDateTime, fmtDay, fullAddress, fullName, mapHref, money, moneyCents, telHref, todayISO } from '@/lib/format';
-import { CLAIM_STATUSES, JOB_TYPES, ROOF_TYPES } from '@/lib/options';
+import { CLAIM_STATUSES, ROOF_TYPES } from '@/lib/options';
+import { ServiceFields } from '@/components/job-fields';
 import { displayStatus, docLabel, STATUS_BADGE } from '@/lib/documents';
 import { getPhotos } from '@/lib/photos';
 import { PhotoUploader } from '@/components/photo-upload';
@@ -96,6 +97,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
           <h1>#{job.number} {job.name}</h1>
           <p className="muted" style={{ marginTop: 4 }}>
             <StageBadge stage={job.stage} /> {job.type === 'Insurance' && <span className="pill">Claim</span>}{' '}
+            {job.services?.length ? `${job.services.join(', ')} · ` : ''}
             {daysSince(job.stage_changed_at)} days in this stage · {money(valueRes.data?.amount ?? job.value)}
             {job.stage === 'lost' && job.lost_reason ? ` · Lost: ${job.lost_reason}` : ''}
           </p>
@@ -138,8 +140,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
           <form key={job.updated_at} action={updateJob} className="form-grid">
             <input type="hidden" name="id" value={job.id} />
             <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="jd-name">Name</label><input id="jd-name" name="name" defaultValue={job.name} required /></div>
-            <div className="field"><label htmlFor="jd-type">Type</label>
-              <select id="jd-type" name="type" defaultValue={job.type}>{JOB_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
+            <ServiceFields selected={job.services ?? []} insurance={job.type === 'Insurance'} />
             <div className="field"><label htmlFor="jd-rep">Sales rep</label>
               <select id="jd-rep" name="rep_id" defaultValue={job.rep_id ?? ''}>
                 <option value="">Unassigned</option>

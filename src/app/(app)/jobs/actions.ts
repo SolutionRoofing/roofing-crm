@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { checked, isoDate, number, oneOf, text, uuid } from '@/lib/form';
-import { CLAIM_STATUSES, JOB_TYPES, LEAD_SOURCES } from '@/lib/options';
+import { CLAIM_STATUSES, LEAD_SOURCES, SERVICES } from '@/lib/options';
 import { STAGES } from '@/lib/stages';
 import type { FormState } from '@/app/login/actions';
 
@@ -59,12 +59,13 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
     contactId = data.id;
   }
 
-  const type = oneOf(fd, 'type', JOB_TYPES, 'Retail');
+  const type = jobType(fd);
+  const services = servicesOf(fd);
   const { data: contact } = await supabase.from('contacts').select('last').eq('id', contactId).single();
-  const name = text(fd, 'name', 120) || `${contact?.last || 'New'} ${type === 'Insurance' ? 'Storm Claim' : 'Re-roof'}`;
+  const name = text(fd, 'name', 120) || `${contact?.last || 'New'} ${services[0] ?? (type === 'Insurance' ? 'Storm Claim' : 'Job')}`;
   const { data: job, error } = await supabase.from('jobs').insert({
-    name, contact_id: contactId, type,
-    roof_type: text(fd, 'roof_type', 40), squares: number(fd, 'squares'), pitch: text(fd, 'pitch', 10),
+    name, contact_id: contactId, type, services,
+    roof_type: text(fd, 'roof_type', 40),
     rep_id: uuid(fd, 'rep_id') ?? (me.role === 'rep' ? me.id : null),
   }).select('id').single();
   if (error) return { error: error.message };
@@ -75,6 +76,10 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
   redirect(`/jobs/${job.id}`);
 }
 
+/** The ticked services, in the standard order. */
+const servicesOf = (fd: FormData) => SERVICES.filter(s => fd.getAll('services').includes(s));
+const jobType = (fd: FormData) => (checked(fd, 'insurance') ? 'Insurance' : 'Retail');
+
 export async function updateJob(fd: FormData) {
   await requireUser([...STAFF]);
   const id = uuid(fd, 'id');
@@ -82,7 +87,8 @@ export async function updateJob(fd: FormData) {
   const supabase = await createClient();
   fail((await supabase.from('jobs').update({
     name: text(fd, 'name', 120) || 'Job',
-    type: oneOf(fd, 'type', JOB_TYPES, 'Retail'),
+    type: jobType(fd),
+    services: servicesOf(fd),
     roof_type: text(fd, 'roof_type', 40),
     squares: number(fd, 'squares'),
     pitch: text(fd, 'pitch', 10),

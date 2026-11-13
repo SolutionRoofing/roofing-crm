@@ -3,23 +3,21 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { oneOf, text, uuid } from '@/lib/form';
-
-const CATEGORIES = ['Before', 'Damage', 'During', 'After'] as const;
+import { text, uuid } from '@/lib/form';
 
 function refresh(jobId: string | null) {
   revalidatePath('/work-orders');
   if (jobId) revalidatePath(`/jobs/${jobId}`);
 }
 
-/** Caption and type. The database decides who may edit (staff: any; crews: their own uploads). */
+/** Caption. The database decides who may edit (staff: any; crews: their own uploads). */
 export async function updatePhoto(fd: FormData) {
   await requireUser();
   const id = uuid(fd, 'id');
   if (!id) return;
   const supabase = await createClient();
   const { data, error } = await supabase.from('photos')
-    .update({ caption: text(fd, 'caption', 300), category: oneOf(fd, 'category', CATEGORIES, 'Before') })
+    .update({ caption: text(fd, 'caption', 300) })
     .eq('id', id).select('job_id');
   if (error) throw new Error(error.message);
   if (!data?.length) throw new Error('You can only edit photos you uploaded.');

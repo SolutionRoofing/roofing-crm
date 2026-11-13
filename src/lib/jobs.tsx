@@ -23,10 +23,11 @@ export type JobRow = {
   phone: string;
   rep_name: string;
   amount: number;
+  services: string[];
 };
 
 export const JOB_LIST_COLUMNS =
-  'id, number, name, stage, stage_changed_at, type, roof_type, squares, pitch, rep_id, crew_id, contact_id, sold_at, lost_reason, created_at, customer_name, address, city, phone, rep_name, amount';
+  'id, number, name, stage, stage_changed_at, type, roof_type, squares, pitch, rep_id, crew_id, contact_id, sold_at, lost_reason, created_at, customer_name, address, city, phone, rep_name, amount, services';
 
 export const stageOf = (id: string) => STAGES.find(s => s.id === id) ?? STAGES[0];
 

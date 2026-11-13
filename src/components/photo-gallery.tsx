@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { deletePhoto, updatePhoto } from '@/app/(app)/photos/actions';
-import { PHOTO_CATEGORIES } from './photo-upload';
 
 export type GalleryPhoto = {
   id: string; category: string; caption: string; taken_at: string; uploaded_by: string | null;
@@ -15,11 +14,10 @@ function Save({ children, className = 'btn small primary' }: { children: React.R
   return <button className={className} disabled={pending}>{pending ? '…' : children}</button>;
 }
 
-/** Thumbnails grouped by type, with a full-size viewer for captions and delete. */
+/** Thumbnails, with a full-size viewer for captions and delete. */
 export function PhotoGallery({ photos, userId, canEditAll }: { photos: GalleryPhoto[]; userId: string; canEditAll: boolean }) {
-  const [filter, setFilter] = useState('All');
   const [open, setOpen] = useState<number | null>(null);
-  const shown = filter === 'All' ? photos : photos.filter(p => p.category === filter);
+  const shown = photos;
   const current = open === null ? null : shown[open];
 
   useEffect(() => {
@@ -34,24 +32,15 @@ export function PhotoGallery({ photos, userId, canEditAll }: { photos: GalleryPh
   }, [open, shown.length]);
 
   if (!photos.length) return <p className="muted">No photos yet.</p>;
-  const counts = Object.fromEntries(PHOTO_CATEGORIES.map(c => [c, photos.filter(p => p.category === c).length]));
   const canEdit = (p: GalleryPhoto) => canEditAll || p.uploaded_by === userId;
 
   return (
     <>
-      <div className="seg photo-filter" role="group" aria-label="Photo type">
-        {['All', ...PHOTO_CATEGORIES].map(c => (
-          <button key={c} type="button" className={filter === c ? 'on' : ''} onClick={() => { setFilter(c); setOpen(null); }}>
-            {c} {c === 'All' ? photos.length : counts[c] || ''}
-          </button>
-        ))}
-      </div>
       <div className="photo-grid">
         {shown.map((p, i) => (
-          <button key={p.id} type="button" className="photo-tile" onClick={() => setOpen(i)} aria-label={`Open ${p.category} photo${p.caption ? `: ${p.caption}` : ''}`}>
+          <button key={p.id} type="button" className="photo-tile" onClick={() => setOpen(i)} aria-label={`Open photo${p.caption ? `: ${p.caption}` : ''}`}>
             {/* eslint-disable-next-line @next/next/no-img-element -- signed storage URL */}
             <img src={p.thumbUrl} alt="" loading="lazy" />
-            <span className="photo-tag">{p.category}</span>
           </button>
         ))}
       </div>
@@ -65,7 +54,7 @@ export function PhotoGallery({ photos, userId, canEditAll }: { photos: GalleryPh
             </div>
             <a href={current.fullUrl} target="_blank" rel="noreferrer">
               {/* eslint-disable-next-line @next/next/no-img-element -- signed storage URL */}
-              <img src={current.fullUrl} alt={current.caption || `${current.category} photo`} className="lightbox-img" />
+              <img src={current.fullUrl} alt={current.caption || 'Job photo'} className="lightbox-img" />
             </a>
             <div className="lightbox-nav">
               <button type="button" className="btn small" disabled={open === 0} onClick={() => setOpen(open! - 1)}>‹ Previous</button>
@@ -74,9 +63,6 @@ export function PhotoGallery({ photos, userId, canEditAll }: { photos: GalleryPh
             {canEdit(current) ? (
               <form action={updatePhoto} className="inline-form" key={current.id}>
                 <input type="hidden" name="id" value={current.id} />
-                <select name="category" defaultValue={current.category} aria-label="Photo type">
-                  {PHOTO_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                </select>
                 <input name="caption" defaultValue={current.caption} placeholder="Caption, e.g. Hail hits on north slope" aria-label="Caption" className="grow-input" />
                 <Save>Save</Save>
               </form>

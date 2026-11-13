@@ -1,4 +1,5 @@
 import { LEAD_SOURCES } from '@/lib/options';
+import { AddressInput } from './address-input';
 
 type Contact = {
   first?: string; last?: string; phone?: string; email?: string; address?: string; city?: string; st?: string; zip?: string;
@@ -13,7 +14,7 @@ export function ContactFields({ c = {} }: { c?: Contact }) {
       <div className="field"><label htmlFor="ct-last">Last name</label><input id="ct-last" name="last" defaultValue={c.last} /></div>
       <div className="field"><label htmlFor="ct-phone">Phone</label><input id="ct-phone" name="phone" type="tel" defaultValue={c.phone} /></div>
       <div className="field"><label htmlFor="ct-email">Email</label><input id="ct-email" name="email" type="email" defaultValue={c.email} /></div>
-      <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="ct-address">Street address</label><input id="ct-address" name="address" defaultValue={c.address} /></div>
+      <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="ct-address">Street address</label><AddressInput id="ct-address" defaultValue={c.address} fill={{ city: 'ct-city', st: 'ct-st', zip: 'ct-zip' }} /></div>
       <div className="field"><label htmlFor="ct-city">City</label><input id="ct-city" name="city" defaultValue={c.city} /></div>
       <div className="form-grid" style={{ gap: 8 }}>
         <div className="field"><label htmlFor="ct-st">State</label><input id="ct-st" name="st" maxLength={2} defaultValue={c.st} /></div>

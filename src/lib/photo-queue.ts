@@ -8,7 +8,8 @@ export type Pending = {
   id: string;
   jobId: string;
   userId: string;
-  category: string;
+  /** Only on photos queued before photo types were removed; ignored. */
+  category?: string;
   full: Blob;
   thumb: Blob;
   takenAt: string;
@@ -58,10 +59,10 @@ export async function shrink(file: Blob, maxSide: number, quality: number): Prom
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Could not process the photo'))), 'image/jpeg', quality));
 }
 
-export async function prepare(file: File, jobId: string, userId: string, category: string): Promise<Pending> {
+export async function prepare(file: File, jobId: string, userId: string): Promise<Pending> {
   const [full, thumb] = await Promise.all([shrink(file, 1600, 0.82), shrink(file, 400, 0.7)]);
   return {
-    id: crypto.randomUUID(), jobId, userId, category, full, thumb,
+    id: crypto.randomUUID(), jobId, userId, full, thumb,
     takenAt: new Date(file.lastModified || Date.now()).toISOString(), attempts: 0,
   };
 }
@@ -78,7 +79,7 @@ export async function uploadOne(p: Pending): Promise<void> {
   if (b.error) throw new Error(b.error.message);
   const { error } = await supabase.from('photos').insert({
     id: p.id, job_id: p.jobId, storage_path: fullPath, thumb_path: thumbPath,
-    category: p.category, uploaded_by: p.userId, taken_at: p.takenAt,
+    uploaded_by: p.userId, taken_at: p.takenAt,
   });
   if (error && error.code !== '23505') throw new Error(error.message);
 }
