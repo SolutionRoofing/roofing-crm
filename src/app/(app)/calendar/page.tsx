@@ -96,7 +96,7 @@ async function Calendar({ searchParams }: { searchParams: PageProps<'/calendar'>
         </div>
       </div>
       {error && <div className="panel form-error">Could not load the calendar: {error.message}</div>}
-      <CalendarView view={view} date={date} today={today} items={items} who={who} />
+      <CalendarView view={view} date={date} today={today} items={items} who={who} me={`p:${me.id}`} />
     </>
   );
 }

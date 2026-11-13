@@ -350,9 +350,17 @@
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--ink-3)); flex: none; }
 .cal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .cal-title { font-size: 18px; margin-left: 6px; }
-.cal-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.cal-legend button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px 3px 8px; font-size: 12.5px; color: var(--ink); }
-.cal-legend button[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
+.cal-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 10px; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.cal-filter-quick { display: flex; align-items: center; gap: 6px; }
+.cal-filter-quick button { border: 1px solid var(--line-2); background: var(--surface); border-radius: 4px; padding: 4px 10px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.cal-filter-quick button.on { background: var(--green); border-color: var(--green); color: #fff; }
+.cal-filter-note { font-size: 12.5px; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.cal-legend button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 3px 10px 3px 4px; font-size: 12.5px; color: var(--ink); }
+.cal-legend .check { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 2px solid var(--c); background: var(--c); color: #fff; font-size: 10px; font-weight: 700; }
+.cal-legend .n { font: 600 11px var(--font-mono); color: var(--ink-3); }
+.cal-legend button[aria-pressed="false"] { color: var(--ink-3); border-style: dashed; }
+.cal-legend button[aria-pressed="false"] .check { background: transparent; }
 .cal-chip { display: flex; align-items: baseline; gap: 4px; width: 100%; min-width: 0; border: 0; border-left: 3px solid var(--c); border-radius: 3px; padding: 2px 5px; font-size: 12px; line-height: 1.35; text-align: left; color: var(--ink); background: color-mix(in srgb, var(--c) 13%, var(--surface)); cursor: pointer; }
 .cal-chip:hover { background: color-mix(in srgb, var(--c) 22%, var(--surface)); }
 .cal-chip.install { background: color-mix(in srgb, var(--c) 26%, var(--surface)); font-weight: 600; }

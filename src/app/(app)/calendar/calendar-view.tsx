@@ -36,7 +36,9 @@ const parseHidden = (raw: string) => { try { const v = JSON.parse(raw); return A
 
 const byTime = (a: CalItem, b: CalItem) => (minutes(a.time) ?? -1) - (minutes(b.time) ?? -1) || a.title.localeCompare(b.title);
 
-export function CalendarView({ view, date, today, items, who }: { view: CalView; date: string; today: string; items: CalItem[]; who: Who[] }) {
+export function CalendarView({ view, date, today, items, who, me }: {
+  view: CalView; date: string; today: string; items: CalItem[]; who: Who[]; me: string;
+}) {
   const hiddenRaw = useSyncExternalStore(subscribeHidden, readHidden, () => '[]');
   const hidden = useMemo(() => parseHidden(hiddenRaw), [hiddenRaw]);
   const [detail, setDetail] = useState<CalItem | null>(null);
@@ -55,8 +57,14 @@ export function CalendarView({ view, date, today, items, who }: { view: CalView;
   for (const i of shown) byDay.set(i.date, [...(byDay.get(i.date) ?? []), i]);
   for (const list of byDay.values()) list.sort(byTime);
 
-  const usedWho = who.filter(w => items.some(i => i.who === w.key));
-  const legend = [...usedWho, ...(items.some(i => !i.who) ? [{ key: '', name: 'Nobody yet', color: NOBODY_COLOR }] : [])];
+  // Everyone on the team and every crew, always listed (not just whoever has something this week).
+  const allKeys = [...who.map(w => w.key), ''];
+  const team = who.filter(w => w.key.startsWith('p:'));
+  const crewList = who.filter(w => w.key.startsWith('c:'));
+  const countOf = (k: string) => items.filter(i => i.who === k).length;
+  const justMe = hidden.length === allKeys.length - 1 && !hidden.includes(me);
+  const everyone = hidden.length === 0;
+  const hiddenCount = allKeys.filter(k => hidden.includes(k)).length;
 
   const chip = (i: CalItem, compact = false) => (
     <button
@@ -88,16 +96,30 @@ export function CalendarView({ view, date, today, items, who }: { view: CalView;
         </div>
       </div>
 
-      {legend.length > 0 && (
-        <div className="cal-legend" aria-label="Show or hide people and crews">
-          {legend.map(w => (
-            <button key={w.key || 'none'} type="button" aria-pressed={!hidden.includes(w.key)} onClick={() => toggle(w.key)}
-              style={{ '--c': w.color } as React.CSSProperties}>
-              <span className="dot" />{w.name}
-            </button>
-          ))}
+      <div className="cal-filter" role="group" aria-label="Whose calendar to show">
+        <div className="cal-filter-quick">
+          <span className="tile-label">Show</span>
+          <button type="button" className={everyone ? 'on' : ''} aria-pressed={everyone} onClick={() => writeHidden([])}>Everyone</button>
+          {who.some(w => w.key === me) && (
+            <button type="button" className={justMe ? 'on' : ''} aria-pressed={justMe} onClick={() => writeHidden(allKeys.filter(k => k !== me))}>Just me</button>
+          )}
+          {hiddenCount > 0 && !justMe && <span className="muted cal-filter-note">{hiddenCount} hidden</span>}
         </div>
-      )}
+        <div className="cal-legend">
+          {[...team, ...crewList, { key: '', name: 'Unassigned', color: NOBODY_COLOR }].map(w => {
+            const on = !hidden.includes(w.key);
+            const n = countOf(w.key);
+            return (
+              <button key={w.key || 'none'} type="button" aria-pressed={on} onClick={() => toggle(w.key)}
+                title={on ? `Hide ${w.name}` : `Show ${w.name}`} style={{ '--c': w.color } as React.CSSProperties}>
+                <span className="check" aria-hidden>{on ? '✓' : ''}</span>
+                {w.name}{w.key === me ? ' (you)' : ''}{w.key.startsWith('c:') ? ' · crew' : ''}
+                {n > 0 && <span className="n">{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {view === 'month' && <Month date={date} today={today} byDay={byDay} chip={chip} onDay={setDay} colorOf={colorOf} />}
       {view === 'week' && <Week date={date} today={today} byDay={byDay} chip={chip} />}
