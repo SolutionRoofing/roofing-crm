@@ -421,3 +421,31 @@ test('job services: only the standard list, shown in the job list', async () => 
     as(db, u.rep1, q => q.query(`update jobs set services = '{Pool cleaning}' where id = $1`, [ids.job])),
     /jobs_services_check/);
 });
+
+test('photo links: staff pick photos, customers see only those, links can be turned off', async () => {
+  const [p1, p2] = await all(db, `insert into photos (job_id, storage_path, caption) values ($1, $2, 'North slope'), ($1, $3, '')
+    returning id`, [ids.job, `${ids.job}/share1.jpg`, `${ids.job}/share2.jpg`]);
+  const otherJob = (await one(db, `insert into jobs (name) values ('Other') returning id`)).id;
+  const [p3] = await all(db, `insert into photos (job_id, storage_path) values ($1, 'other/x.jpg') returning id`, [otherJob]);
+
+  // A photo from another job is dropped from the link.
+  const token = await as(db, u.rep1, async q =>
+    (await one(q, `select share_photos($1, $2, 'Here you go') as t`, [ids.job, [p1.id, p3.id]])).t);
+  assert.equal(token.length, 64);
+  await assert.rejects(as(db, u.crewA, q => q.query(`select share_photos($1, $2)`, [ids.job, [p1.id]])), /Only office/);
+  await assert.rejects(asAnon(db, q => q.query(`select share_photos($1, $2)`, [ids.job, [p1.id]])), /permission denied/);
+  await assert.rejects(as(db, u.rep1, q => q.query(`select share_photos($1, $2)`, [ids.job, [p3.id]])), /Pick at least one/);
+
+  const shared = await asAnon(db, async q => (await one(q, `select get_shared_photos($1) as s`, [token])).s);
+  assert.deepEqual(shared.photos.map(p => p.id), [p1.id]);
+  assert.equal(shared.photos[0].caption, 'North slope');
+  assert.equal(shared.message, 'Here you go');
+  assert.ok(!JSON.stringify(shared).includes(p2.id));
+  assert.equal(await asAnon(db, async q => (await one(q, `select get_shared_photos('short') as s`)).s), null);
+  assert.ok((await one(db, `select viewed_at from photo_shares where token = $1`, [token])).viewed_at);
+  await assert.rejects(asAnon(db, q => q.query(`select * from photo_shares`)), /permission denied/);
+  assert.equal((await as(db, u.crewA, q => all(q, `select id from photo_shares`))).length, 0);
+
+  await as(db, u.rep1, q => q.query(`update photo_shares set revoked_at = now() where token = $1`, [token]));
+  assert.equal(await asAnon(db, async q => (await one(q, `select get_shared_photos($1) as s`, [token])).s), null);
+});

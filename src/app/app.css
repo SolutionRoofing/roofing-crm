@@ -154,3 +154,18 @@
 .addr-map { display: inline-block; margin-top: 4px; font-size: 13px; }
 .check-field.stack { flex-direction: column; gap: 2px; }
 .check-field.stack small { margin: 0 0 0 26px; }
+
+/* Sharing photos with customers */
+.share-box { border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--surface-2); padding: 12px; margin-bottom: 12px; display: grid; gap: 8px; }
+.share-box h3 { font-size: 15px; }
+.share-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+.share-pick { outline: 3px solid transparent; outline-offset: -3px; }
+.share-pick img { opacity: .45; transition: opacity .1s; }
+.share-pick.on { outline-color: var(--accent); }
+.share-pick.on img { opacity: 1; }
+.share-pick input { position: absolute; top: 6px; left: 6px; z-index: 1; width: 20px; height: 20px; accent-color: var(--accent); }
+.share-list { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+.share-list h3 { font-size: 14px; margin-bottom: 4px; }
+.share-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 4px 0; font-size: 13px; flex-wrap: wrap; }
+.good-text { color: var(--good); font-weight: 600; }
+.share-message { margin-top: 10px; padding: 10px 12px; background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 6px; white-space: pre-line; }

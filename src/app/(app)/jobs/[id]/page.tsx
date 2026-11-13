@@ -17,6 +17,9 @@ import { displayStatus, docLabel, STATUS_BADGE } from '@/lib/documents';
 import { getPhotos } from '@/lib/photos';
 import { PhotoUploader } from '@/components/photo-upload';
 import { PhotoGallery } from '@/components/photo-gallery';
+import { PhotoShare } from '@/components/photo-share';
+import { revokePhotoShare } from '@/app/(app)/photos/actions';
+import { emailConfigured } from '@/lib/email/send';
 import {
   addNote, addSupplement, changeStage, createWorkOrder, deleteJob, deleteWorkOrder, updateClaim, updateJob, updateSupplement,
 } from '../actions';
@@ -67,7 +70,7 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
   const { data: job } = await supabase.from('jobs').select('*').eq('id', id).maybeSingle();
   if (!job) notFound();
 
-  const [contactRes, docsRes, tasksRes, eventsRes, wosRes, activityRes, valueRes, staff, photos] = await Promise.all([
+  const [contactRes, docsRes, tasksRes, eventsRes, wosRes, activityRes, valueRes, staff, photos, sharesRes] = await Promise.all([
     job.contact_id ? supabase.from('contacts').select('*').eq('id', job.contact_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from('documents').select('id, kind, number, status, date, due_date, items, tax_rate, payments(amount)').eq('job_id', id).order('created_at'),
     supabase.from('tasks').select(TASK_COLUMNS).eq('job_id', id).order('done').order('due', { nullsFirst: false }),
@@ -77,7 +80,9 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
     supabase.from('job_list').select('amount').eq('id', id).maybeSingle(),
     getPeople(),
     getPhotos([id]),
+    supabase.from('photo_shares').select('id, photo_ids, sent_to, created_at, viewed_at').eq('job_id', id).is('revoked_at', null).order('created_at', { ascending: false }),
   ]);
+  const shares = (sharesRes.data ?? []) as { id: string; photo_ids: string[]; sent_to: string; created_at: string; viewed_at: string | null }[];
   const contact = contactRes.data;
   const docs = (docsRes.data ?? []) as unknown as Doc[];
   const tasks = (tasksRes.data ?? []) as unknown as Task[];
@@ -168,9 +173,31 @@ async function Job({ params }: { params: PageProps<'/jobs/[id]'>['params'] }) {
       {job.type === 'Insurance' && <Claim key={job.updated_at} jobId={job.id} ins={ins} />}
 
       <section className="panel" id="photos">
-        <div className="panel-head"><h2>Photos</h2></div>
+        <div className="panel-head">
+          <h2>Photos</h2>
+          <PhotoShare key={photos.length} jobId={job.id} photos={photos.map(p => ({ id: p.id, thumbUrl: p.thumbUrl, caption: p.caption }))}
+            customerEmail={contact?.email ?? ''} emailReady={emailConfigured()} />
+        </div>
         <PhotoUploader jobId={job.id} userId={me.id} />
         <PhotoGallery photos={photos} userId={me.id} canEditAll />
+        {shares.length > 0 && (
+          <div className="share-list">
+            <h3>Customer photo links</h3>
+            {shares.map(s => (
+              <div className="share-row" key={s.id}>
+                <span>
+                  {fmtDateTime(s.created_at)} · {s.photo_ids.length} photo{s.photo_ids.length === 1 ? '' : 's'}
+                  {s.sent_to ? ` · emailed to ${s.sent_to}` : ''}
+                  {' · '}<span className={s.viewed_at ? 'good-text' : 'muted'}>{s.viewed_at ? `Opened ${fmtDateTime(s.viewed_at)}` : 'Not opened yet'}</span>
+                </span>
+                <form action={revokePhotoShare}>
+                  <input type="hidden" name="id" value={s.id} />
+                  <ConfirmButton message="Turn off this link? The customer will no longer be able to see these photos." className="btn small danger-ghost">Turn off</ConfirmButton>
+                </form>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="grid-2" id="schedule">
