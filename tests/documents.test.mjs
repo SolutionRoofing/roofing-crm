@@ -45,6 +45,15 @@ test('set margin re-prices lines with costs to hit the target', () => {
   const out = applyMargin(items, 40, 7.8);
   assert.equal(Math.round(costTotals(out, 7.8).margin), 40);
   assert.equal(out[0].price, 179.67);
+
+  // A flat-price line with no cost counts as profit, so costed lines need less markup to hit 40% overall.
+  const withPermit = [...items, { name: 'Permit', desc: '', unit: 'EA', qty: 1, mat: 0, lab: 0, markup: 0, price: 500 }];
+  const out2 = applyMargin(withPermit, 40, 7.8);
+  assert.equal(Math.round(costTotals(out2, 7.8).margin), 40);
+  assert.equal(out2[2].price, 500, 'flat-price line untouched');
+  // If the flat lines alone beat the target, nothing is priced below cost.
+  const big = applyMargin([items[0], { ...withPermit[2], price: 50000 }], 40, 7.8);
+  assert.equal(big[0].markup, 0);
 });
 
 test('old lines ({ desc, qty, unit, price }) read as item names; junk is cleaned', () => {

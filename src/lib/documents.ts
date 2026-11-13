@@ -112,10 +112,23 @@ export function costTotals(items: Line[], materialTax: number) {
   };
 }
 
-/** Re-price every line that has a cost so the estimate lands on a target profit margin %. */
+/**
+ * Re-price the lines that have a cost so the whole estimate lands on a target profit margin %.
+ * Lines with no cost (a permit, a flat-price extra) keep their price and count fully as profit,
+ * so the markup on costed lines is: margin / (1 − margin) − (no-cost revenue ÷ cost).
+ * Never prices below cost: if the no-cost lines alone beat the target, markup stops at 0.
+ */
 export function applyMargin(items: Line[], marginPct: number, materialTax: number): Line[] {
   const m = Math.min(95, Math.max(0, num(marginPct))) / 100;
-  const markup = Math.round((1 / (1 - m) - 1) * 10000) / 100;
+  let cost = 0, fixedRevenue = 0;
+  for (const l of items) {
+    if (!isItem(l)) continue;
+    const c = unitCost(l, materialTax);
+    if (c > 0) cost += num(l.qty) * c; else fixedRevenue += lineAmount(l);
+  }
+  if (cost <= 0) return items;
+  const k = Math.max(0, m / (1 - m) - fixedRevenue / cost);
+  const markup = Math.round(k * 10000) / 100;
   return items.map(l => (isItem(l) && unitCost(l, materialTax) > 0 ? { ...l, markup, price: priceFor({ ...l, markup }, materialTax) } : l));
 }
 

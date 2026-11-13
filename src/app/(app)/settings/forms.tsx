@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import type { FormState } from '@/app/login/actions';
-import { saveCompany, saveMyProfile } from './actions';
+import { importPriceList, saveCompany, saveMyProfile } from './actions';
 
 function Status({ state }: { state: FormState }) {
   if (state.error) return <p className="form-error" role="alert" style={{ gridColumn: '1 / -1' }}>{state.error}</p>;
@@ -52,6 +52,25 @@ export function CompanyForm({ s }: { s: Company }) {
       </div>
       <div className="field" style={{ gridColumn: '1 / -1' }}><label htmlFor="co-terms">Estimate terms</label><textarea id="co-terms" name="terms" rows={3} defaultValue={s.terms} /></div>
       <div><button className="btn primary" disabled={pending}>{pending ? 'Saving…' : 'Save company details'}</button></div>
+    </form>
+  );
+}
+
+/** Price list CSV import (JobNimbus export, ABC price sheet, or any spreadsheet saved as CSV). */
+export function PriceImportForm() {
+  const [state, action, pending] = useActionState<FormState, FormData>(importPriceList, {});
+  return (
+    <form action={action} className="price-import">
+      <Status state={state} />
+      <p className="muted">
+        Columns it understands: <b>Name</b> (required), Description, UOM, Material cost, Labor cost, Price (or Material price +
+        Labor price), Markup, Category or Type, and Active/Visible. Items are matched by name, so importing again updates prices.
+      </p>
+      <div className="inline-form">
+        <input type="file" name="file" accept=".csv,text/csv" aria-label="Price list CSV file" required />
+        <label className="inline-check"><input type="checkbox" name="replace" /> Replace my whole price list with this file</label>
+        <button className="btn small primary" disabled={pending}>{pending ? 'Importing…' : 'Import'}</button>
+      </div>
     </form>
   );
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
 import { markupFor, priceFor } from '@/lib/documents';
+import { toPriceRows } from '@/lib/price-import';
 import { createClient } from '@/lib/supabase/server';
 import { number, text } from '@/lib/form';
 import type { FormState } from '@/app/login/actions';
@@ -76,4 +77,52 @@ export async function saveCompany(_prev: FormState, fd: FormData): Promise<FormS
   if (!count) return { error: 'Only an owner or office manager can change company settings.' };
   revalidatePath('/', 'layout');
   return { ok: 'Company details saved.' };
+}
+
+/**
+ * Import a price list CSV (JobNimbus Products & Services export, ABC price sheet, any spreadsheet).
+ * Items are matched by name: existing ones are updated, new ones added. Optionally replaces the whole list.
+ */
+export async function importPriceList(_prev: FormState, fd: FormData): Promise<FormState> {
+  await requireUser(['owner', 'office']);
+  const file = fd.get('file');
+  if (!(file instanceof File) || file.size === 0) return { error: 'Choose a CSV file to import.' };
+  if (file.size > 3 * 1024 * 1024) return { error: 'That file is over 3 MB. Save just the item columns as CSV and try again.' };
+  if (!/\.(csv|txt)$/i.test(file.name)) return { error: 'Save the spreadsheet as CSV (File → Save as → CSV) and import that file.' };
+  const supabase = await createClient();
+  const { data: settings } = await supabase.from('settings').select('material_tax_rate').eq('id', 1).maybeSingle();
+  const { rows, skipped, error } = toPriceRows(await file.text(), Number(settings?.material_tax_rate) || 0);
+  if (error) return { error };
+  if (!rows.length) return { error: 'No items found in that file.' };
+
+  const replace = fd.get('replace') === 'on';
+  const { data: existing, error: e1 } = await supabase.from('catalog_items').select('id, name');
+  if (e1) return { error: e1.message };
+  const byName = new Map((existing ?? []).map(c => [c.name.trim().toLowerCase(), c.id as string]));
+  const updates = rows.filter(r => byName.has(r.name.toLowerCase()));
+  const inserts = rows.filter(r => !byName.has(r.name.toLowerCase())).map((r, i) => ({ ...r, sort: 2000 + i }));
+
+  for (const r of updates) {
+    const { error: e } = await supabase.from('catalog_items').update(r).eq('id', byName.get(r.name.toLowerCase())!);
+    if (e) return { error: `"${r.name}": ${e.message}` };
+  }
+  for (let i = 0; i < inserts.length; i += 200) {
+    const { error: e } = await supabase.from('catalog_items').insert(inserts.slice(i, i + 200));
+    if (e) return { error: e.message };
+  }
+  let removed = 0;
+  if (replace) {
+    const keep = new Set(rows.map(r => r.name.toLowerCase()));
+    const drop = (existing ?? []).filter(c => !keep.has(c.name.trim().toLowerCase())).map(c => c.id as string);
+    if (drop.length) {
+      const { error: e } = await supabase.from('catalog_items').delete().in('id', drop);
+      if (e) return { error: e.message };
+      removed = drop.length;
+    }
+  }
+  revalidatePath('/settings');
+  const parts = [`${inserts.length} added`, `${updates.length} updated`];
+  if (removed) parts.push(`${removed} removed`);
+  if (skipped) parts.push(`${skipped} skipped (hidden, duplicate or no name)`);
+  return { ok: `Price list imported: ${parts.join(', ')}.` };
 }

@@ -6,7 +6,7 @@ import { PLAN_LIMITS, WARN_AT } from '@/lib/plan-limits';
 import { createClient } from '@/lib/supabase/server';
 import { deleteCatalogItem, saveCatalogItem } from './actions';
 import { deleteEstimateTemplate } from '../documents/actions';
-import { CompanyForm, ProfileForm } from './forms';
+import { CompanyForm, PriceImportForm, ProfileForm } from './forms';
 
 export const metadata: Metadata = { title: 'Settings' };
 
@@ -61,6 +61,10 @@ async function Settings() {
             Enter material and labor cost per unit and a markup, and the price works itself out (material cost includes the
             {' '}{Number(settings?.material_tax_rate) || 0}% tax you pay). Or leave costs at 0 and type a price.
           </p>
+          <details className="add-box" style={{ marginBottom: 12 }}>
+            <summary className="btn small">Import from a CSV file</summary>
+            <PriceImportForm />
+          </details>
           <div className="cat-head" aria-hidden="true">
             <span>Item name</span><span>Category</span><span>UoM</span><span>Material</span><span>Labor</span><span>Markup %</span><span>Price</span><span />
           </div>
@@ -149,7 +153,7 @@ function CatalogForm({ c }: { c?: Item }) {
     <form action={saveCatalogItem} className="cat-form">
       {c && <input type="hidden" name="id" value={c.id} />}
       <input name="name" defaultValue={c?.name} placeholder={c ? '' : 'New item, e.g. Chimney flashing'} aria-label={`Item name for ${n}`} required />
-      <input name="category" defaultValue={c?.category} placeholder="Roofing" aria-label={`Category for ${n}`} />
+      <input name="category" defaultValue={c?.category} placeholder={c ? "" : "Roofing"} aria-label={`Category for ${n}`} />
       <input name="unit" defaultValue={c?.unit} placeholder="EA" aria-label={`Unit for ${n}`} />
       <input name="material_cost" defaultValue={c ? Number(c.material_cost).toFixed(2) : ''} placeholder="0.00" inputMode="decimal" aria-label={`Material cost for ${n}`} />
       <input name="labor_cost" defaultValue={c ? Number(c.labor_cost).toFixed(2) : ''} placeholder="0.00" inputMode="decimal" aria-label={`Labor cost for ${n}`} />

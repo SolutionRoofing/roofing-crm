@@ -191,10 +191,17 @@ function ItemRow({ l, index, matTax, catalog, canSaveProducts, onChange }: {
 }) {
   const n = index + 1;
   const hasCost = unitCost(l, matTax) > 0;
-  // Like JobNimbus: changing a cost keeps the markup and moves the price; changing the price moves the markup.
+  // What the line looked like when someone started typing a cost (so each keystroke doesn't compound).
+  const before = useRef({ hadCost: hasCost, markup: l.markup });
+  const startCost = () => { before.current = { hadCost: hasCost, markup: l.markup }; };
+  // Like JobNimbus, once a line has costs, changing a cost keeps the markup and moves the price.
+  // Adding costs to a line that only had a price keeps that price and works out the markup instead.
   const setCost = (patch: Partial<ItemLine>) => {
     const next = { ...l, ...patch };
-    onChange(unitCost(next, matTax) > 0 ? { ...next, price: priceFor(next, matTax) } : next);
+    if (unitCost(next, matTax) <= 0) { onChange(next); return; }
+    onChange(before.current.hadCost || !l.price
+      ? { ...next, markup: before.current.markup, price: priceFor({ ...next, markup: before.current.markup }, matTax) }
+      : { ...next, markup: markupFor(l.price, next, matTax) });
   };
   const pick = (c: CatalogItem) => {
     const base: ItemLine = {
@@ -215,8 +222,8 @@ function ItemRow({ l, index, matTax, catalog, canSaveProducts, onChange }: {
       <span className="est-c-unit"><input value={l.unit} onChange={e => onChange({ ...l, unit: e.target.value })} aria-label={`Line ${n} unit`} /></span>
       <span className="est-c-qty"><NumInput value={l.qty} onChange={qty => onChange({ ...l, qty })} label={`Line ${n} quantity`} decimals={3} /></span>
       <span className="est-c-cost">
-        <span className="est-ml"><i>M</i><NumInput value={l.mat} onChange={mat => setCost({ mat })} label={`Line ${n} material cost per unit`} money /></span>
-        <span className="est-ml"><i>L</i><NumInput value={l.lab} onChange={lab => setCost({ lab })} label={`Line ${n} labor cost per unit`} money /></span>
+        <span className="est-ml"><i>M</i><NumInput value={l.mat} onFocus={startCost} onChange={mat => setCost({ mat })} label={`Line ${n} material cost per unit`} money /></span>
+        <span className="est-ml"><i>L</i><NumInput value={l.lab} onFocus={startCost} onChange={lab => setCost({ lab })} label={`Line ${n} labor cost per unit`} money /></span>
       </span>
       <span className="est-c-markup">
         <NumInput value={l.markup} onChange={markup => onChange({ ...l, markup, price: hasCost ? priceFor({ ...l, markup }, matTax) : l.price })}
@@ -251,7 +258,7 @@ function ItemSearch({ value, line, catalog, canSaveProducts, isNew, onType, onPi
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
+  const [picked, setActive] = useState(-1);
   const q = value.trim().toLowerCase();
   const matches = useMemo(() => {
     if (!q) return catalog.slice(0, 12);
@@ -272,18 +279,20 @@ function ItemSearch({ value, line, catalog, canSaveProducts, isNew, onType, onPi
     setOpen(false);
   };
   const listOpen = open && options.length > 0;
+  // Enter takes the best price-list match; "Add new product" is there to pick on purpose.
+  const active = picked >= 0 ? Math.min(picked, options.length - 1) : (showNew && matches.length ? 1 : 0);
 
   return (
     <span className="est-search">
       <input
         value={value}
-        onChange={e => { onType(e.target.value); setOpen(true); setActive(0); }}
+        onChange={e => { onType(e.target.value); setOpen(true); setActive(-1); }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onKeyDown={e => {
           if (!listOpen) return;
-          if (e.key === 'ArrowDown') { e.preventDefault(); setActive(a => Math.min(options.length - 1, a + 1)); }
-          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => Math.max(0, a - 1)); }
+          if (e.key === 'ArrowDown') { e.preventDefault(); setActive(Math.min(options.length - 1, active + 1)); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(Math.max(0, active - 1)); }
           else if (e.key === 'Enter') { e.preventDefault(); choose(active); }
           else if (e.key === 'Escape') setOpen(false);
         }}
@@ -313,8 +322,8 @@ function ItemSearch({ value, line, catalog, canSaveProducts, isNew, onType, onPi
 }
 
 /** Number box that lets people type freely ("1.", "") and reports a number. */
-function NumInput({ value, onChange, label, money, decimals = 2, disabled }: {
-  value: number; onChange: (n: number) => void; label: string; money?: boolean; decimals?: number; disabled?: boolean;
+function NumInput({ value, onChange, onFocus, label, money, decimals = 2, disabled }: {
+  value: number; onChange: (n: number) => void; onFocus?: () => void; label: string; money?: boolean; decimals?: number; disabled?: boolean;
 }) {
   const fmt = (n: number) => (money ? (Number(n) || 0).toFixed(2) : String(Math.round((Number(n) || 0) * 10 ** decimals) / 10 ** decimals));
   const [text, setText] = useState(fmt(value));
@@ -329,7 +338,7 @@ function NumInput({ value, onChange, label, money, decimals = 2, disabled }: {
       inputMode="decimal"
       aria-label={label}
       disabled={disabled}
-      onFocus={e => { focused.current = true; e.target.select(); }}
+      onFocus={e => { focused.current = true; e.target.select(); onFocus?.(); }}
       onBlur={() => { focused.current = false; setText(fmt(value)); }}
       onChange={e => {
         const t = e.target.value.replace(/[$,\s]/g, '');
